@@ -13,7 +13,8 @@ Software exists to enable research. All engineering and system decisions must ul
 
 ### 1. Project Principles
 - **Compliance First**: SYNTHRA must operate strictly within the boundaries of official WorldQuant BRAIN platform APIs. Any action that bypasses authorization, scrapers, or violates the platform's terms of service is prohibited.
-- **Compound Knowledge**: No simulation run is wasted. The system must capture, classify, and index every failure and success to improve future operations.
+- **Knowledge Compounding**: The primary product of SYNTHRA is **Knowledge**, which is organized, search-indexed, and stored in a compounding database. Alphas are valuable byproducts of this knowledge generation process.
+- **Retrospective Value**: No simulation run is wasted. The system must capture, classify, and index every failure and success to improve future operations.
 
 ### 2. Engineering Principles
 - **Architecture First**: Do not write code without a documented design. Architectural diagrams and interfaces must precede implementation.
@@ -34,7 +35,7 @@ Software exists to enable research. All engineering and system decisions must ul
 - **Least Privilege**: Active agents must operate within strict sandboxes with bounded directory access, rate limits, and network firewalls.
 
 ### 6. Coding Principles
-- **Strict Typing**: All code (primarily Python >= 3.11) must use strict type hints.
+- **Strict Typing**: All code must use strict type hints.
 - **Comprehensive Testing**: Write unit tests for all public classes and functions. Maintain high coverage. Do not commit untested code.
 
 ### 7. Decision Principles

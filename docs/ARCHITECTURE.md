@@ -1,100 +1,73 @@
 # SYNTHRA Architecture Specification
 
-This document defines the high-level layered architecture of SYNTHRA. The design enforces separation of concerns through decoupled layers, ensuring the system remains implementation-agnostic.
+This document defines the high-level system design of SYNTHRA. The architecture is organized around a centralized governing and planning system that orchestrates functional departments.
 
 ---
 
-## 🏛️ Layered Architecture
+## 🗺️ System Hierarchy
 
-SYNTHRA is structured into eight architectural layers. Each layer is defined by its operational responsibilities and communicates with adjacent layers through strict boundaries.
+In SYNTHRA, orchestration and enforcement are decoupled from functional execution. The Governor serves as the system's "CEO" (resource allocator and constraint enforcer), while the Research Planner serves as the "brain" (the centralized coordinator).
 
 ```
-+---------------------------------------------------------------+
-|                       PRESENTATION LAYER                      |
-|                  User Interfaces  •  CLI  •  APIs             |
-+---------------------------------------------------------------+
-                               |
-                               v
-+---------------------------------------------------------------+
-|                        PLANNING LAYER                         |
-|                    Campaigns  •  Task Router                  |
-+---------------------------------------------------------------+
-                               |
-                               v
-+---------------------------------------------------------------+
-|                        RESEARCH LAYER                         |
-|            Hypotheses  •  Quantitative Ideation               |
-+---------------------------------------------------------------+
-                               |
-                               v
-+---------------------------------------------------------------+
-|                        REASONING LAYER                        |
-|            Models Routing  •  Grammar & Validation            |
-+---------------------------------------------------------------+
-                               |
-                               v
-+---------------------------------------------------------------+
-|                        KNOWLEDGE LAYER                        |
-|           Memory  •  Graphs  •  Portfolio Intelligence        |
-+---------------------------------------------------------------+
-                               |
-                               v
-+---------------------------------------------------------------+
-|                         LEARNING LAYER                        |
-|              Evaluation  •  Failure Classifiers               |
-+---------------------------------------------------------------+
-                               |
-                               v
-+---------------------------------------------------------------+
-|                       EXECUTION LAYER                         |
-|             Simulation Client  •  Sandbox Runtimes            |
-+---------------------------------------------------------------+
-                               |
-                               v
-+---------------------------------------------------------------+
-|                     INFRASTRUCTURE LAYER                      |
-|             Hardware  •  Storage  •  Network Drivers          |
-+---------------------------------------------------------------+
+                    SYNTHRA
+
+                    GOVERNOR (CEO)
+                        │
+                 Research Planner (Brain)
+                        │
+        ┌───────────────┼────────────────┐
+        │               │                │
+ Research Dept    Knowledge Dept   Execution Dept
+        │               │                │
+ Learning Dept    Portfolio Dept   Infrastructure Dept
 ```
 
 ---
 
-## 🧩 Layer Responsibilities
+## 🏛️ System Core
 
-### 1. Presentation Layer
-- **Responsibilities**: Governs external interactions with human operators. Captures user inputs, presents research campaign statuses, outputs strategy candidates for review, and handles authorization views.
-- **Constraints**: Contains no business logic, research algorithms, or direct execution capabilities.
+### 1. The Governor
+The Governor acts as the highest authority (the "CEO") of the system. All planned actions, resource requests, and boundary checks must pass through the Governor.
+- **Responsibilities**:
+  - Enforces safety boundaries, rate limits, and compliance constraints defined in the [Constitution](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/CONSTITUTION.md).
+  - Arbitrates resource allocation, including token budgets, API request limits, and computation time.
+  - Reviews proposed backtests and denies executions that represent duplicate paths or violate campaign parameters.
+  - Human-in-the-loop validation: Intercepts high-risk tasks and prompts for human review before proceeding.
 
-### 2. Planning Layer
-- **Responsibilities**: Structures research actions into campaigns. It manages the campaign execution order, schedules sub-tasks, and routes messages between reasoning agents.
-- **Core Component - Planner**: Generates execution schedules based on active campaign objectives. Tracks task dependencies, resolves execution bottlenecks, and handles error-recovery loops.
-- **Core Component - Governor**: Enforces system constraints, safety guardrails, and compliance regulations. Validates actions proposed by planning and execution units, preventing out-of-bounds operations.
+### 2. The Research Planner
+The Research Planner serves as the orchestrating engine (the "brain") of SYNTHRA. It sits below the Governor and coordinates all system departments.
+- **Responsibilities**:
+  - Receives high-level campaign configurations and generates a structured schedule of tasks.
+  - Assigns sub-tasks to the Research, Knowledge, Execution, Learning, and Portfolio departments.
+  - Monitors the state of active agents, tracks task dependencies, and manages the execution flow.
+  - Orchestrates recovery loops when tasks fail or timeout.
 
-### 3. Research Layer
-- **Responsibilities**: Focuses on quantitative ideation and hypothesis building. It structures research around systematic campaigns rather than isolated alpha generation.
-- **Concept - Research Campaigns**: All research operations are grouped into campaigns. A campaign defines the parameters of study, including target assets, geographical regions, economic anomalies, and dataset boundaries.
-- **Core Component - Hypothesis Engine**: Synthesizes data metadata and past research findings into specific, testable economic hypotheses.
+---
 
-### 4. Reasoning Layer
-- **Responsibilities**: Manages cognitive task routing and syntactic validation.
-- **Core Component - LLM Router**: Evaluates task complexity, token limits, and cost profiles to select the most appropriate language model or reasoning engine for a given task.
-- **Core Component - Synthesizer**: Translates verbal economic rationale into structured expressions using strict grammatical templates.
+## 🏢 Functional Departments
 
-### 5. Knowledge Layer
-- **Responsibilities**: Accumulates, index-links, and retrieves the mathematical and economic findings generated by the system.
-- **Concept - Research Memory**: A stateful repository storing historical performance data, context embeddings, and campaign results.
-- **Concept - Knowledge Graph**: Maps relationships between datasets, mathematical operators, economic themes, and their joint performance.
-- **Concept - Experiment Graph**: Tracks the lineage of every strategy generated. Connects the parent hypothesis, synthesized expression variants, simulation attempts, and classification codes in a traceable tree structure.
-- **Concept - Portfolio Intelligence**: Evaluates the relationship between individual strategies and the active strategy portfolio. Calculates cross-correlation profiles and assesses information ratio contributions.
+### 1. Research Department
+- **Responsibilities**: Generates economic hypotheses and compiles them into syntactically valid alpha expressions (Fast Expression or Python formats).
+- **Core Components**: Hypothesis Engine, Code Synthesizer, LLM Router.
 
-### 6. Learning Layer
-- **Responsibilities**: Updates system intelligence from empirical successes and failures.
-- **Core Component - Failure Classifier**: Analyzes simulation failures (e.g., compile issues, high self-correlation, syntax warnings). Categorizes them into structured failure profiles and updates the Knowledge Layer to prevent duplicate invalid attempts.
+### 2. Knowledge Department
+- **Responsibilities**: Accumulates, organizes, and link-indexes research findings.
+- **Core Concepts**:
+  - **Research Memory**: A queryable database storing past campaign configurations, logs, and outputs.
+  - **Knowledge Graph**: Maps relationships between datasets, operators, themes, and their empirical performance.
+  - **Experiment Graph**: Relates hypotheses to their expression variants, simulation attempts, and outcome metadata.
 
-### 7. Execution Layer
-- **Responsibilities**: Interfaces directly with platforms and external sandboxes.
-- **Core Component - Simulation Client**: Manages queues, handles authorization tokens, rate limits, and interfaces with the target backtesting APIs.
-- **Core Component - Runtime Sandbox**: Confines all code compilation and execution to isolated, permission-bounded runtimes.
+### 3. Execution Department
+- **Responsibilities**: Interfaces directly with external sandboxes and platforms.
+- **Core Components**: Simulation Client (ACE API wrapper), Runtime Sandbox.
 
-### 8. Infrastructure Layer
-- **Responsibilities**: Manages physical or virtual system resources. Coordinates data persistence, network interfaces, filesystem access, and hardware compute tasks.
+### 4. Learning Department
+- **Responsibilities**: Analyzes successes and failures to refine campaign heuristics.
+- **Core Components**: Failure Classifier.
+
+### 5. Portfolio Department
+- **Responsibilities**: Evaluates cross-strategy correlation profiles and ensures strategy diversification.
+- **Core Concepts**: Portfolio Intelligence.
+
+### 6. Infrastructure Department
+- **Responsibilities**: Coordinates physical resources, file persistence, network configurations, and database connectivity.

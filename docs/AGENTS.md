@@ -1,62 +1,53 @@
 # SYNTHRA Agent & Department Specifications
 
-This document defines the organizational structure of SYNTHRA's agentic systems, grouping active agents into specialized Departments to maintain separation of concerns and clear functional boundaries.
+This document defines the organizational structure of SYNTHRA's agentic systems, grouping active agents into specialized Departments and mapping them to the system core.
 
 ---
 
-## 🏛️ Departmental Structure
-
-Agents do not operate in a flat list. To coordinate complex campaigns, agents belong to specialized Departments. Communication between departments is managed through formal interfaces, and access to tools is governed at the department level.
+## 🏛️ System Structure
 
 ```
-                  +--------------------------------+
-                  |      PLANNING DEPARTMENT       |
-                  |  Task scheduling and governing |
-                  +--------------------------------+
-                                  |
-            +---------------------+---------------------+
-            |                     |                     |
-+----------------------+ +------------------+ +-------------------+
-|  RESEARCH DEPT       | |  KNOWLEDGE DEPT  | |  EXECUTION DEPT   |
-|  Hypotheses and code | |  Graphs & memory | |  Simulations      |
-+----------------------+ +------------------+ +-------------------+
-            |                     |                     |
-            +---------------------+---------------------+
-                                  |
-                        +------------------+
-                        |  LEARNING DEPT   |
-                        |  Failure analysis|
-                        +------------------+
+                    SYNTHRA
+
+                    GOVERNOR (CEO)
+                        │
+                 Research Planner (Brain)
+                        │
+        ┌───────────────┼────────────────┐
+        │               │                │
+ Research Dept    Knowledge Dept   Execution Dept
+        │               │                │
+ Learning Dept    Portfolio Dept   Infrastructure Dept
 ```
 
 ---
 
-## 🏢 Departments & Agent Profiles
+## 🏛️ System Core
 
-### 1. Planning Department
-The Planning Department coordinates system activity, schedules campaign tasks, and monitors system safety.
-- **Responsibilities**: Generates execution schedules, monitors agent dependencies, and blocks operations that violate system constraints.
-- **Governing Concepts**: Planner, Governor.
+The System Core is responsible for global system coordination, resource allocation, and safety enforcement. It is not comprised of standard reasoning agents but of deterministic control engines:
+- **Governor**: Evaluates task bounds, arbitrates token budgets, checks for duplicate strategies, and halts execution for human validation on high-risk tasks.
+- **Research Planner**: Manages campaign state schedules, routes messages, spawns agents, and runs recovery flows.
 
 ---
 
-### 2. Research Department
+## 🏢 Functional Departments
+
+### 1. Research Department
 The Research Department translates economic concepts into testable code.
-- **Responsibilities**: Formulates economic hypotheses based on campaign parameters and compiles them into syntactically valid alpha expressions.
 
 #### Profile: Hypothesis Generator Agent
 *   **Department**: Research Department
 *   **Responsibilities**:
-    - Review available datasets and metadata boundaries.
-    - Generate economically sound hypotheses based on campaign themes.
-    - Output a structured research brief detailing the target variables and operators.
+    - Review available datasets and campaign theme constraints.
+    - Generate economically sound hypotheses explaining targeted market anomalies.
+    - Output a structured research brief.
 *   **Interfaces & Data Flow**:
     - *Inputs*: Campaign parameters, dataset metadata profiles.
     - *Outputs*: Structured research brief (economic rationale, target variables, math operators).
 *   **Memory & Tools**: Read-only access to Research Memory; dataset catalog query tool.
 *   **Failure Modes & Mitigations**:
     - *Failure Mode*: Generating hypotheses that cannot be translated to expressions.
-      - *Mitigation*: Hard-coded schema templates enforcing variable mapping.
+      - *Mitigation*: Schema validation matching variable types.
 
 #### Profile: Code Synthesizer Agent
 *   **Department**: Research Department
@@ -73,9 +64,8 @@ The Research Department translates economic concepts into testable code.
 
 ---
 
-### 3. Execution Department
+### 2. Execution Department
 The Execution Department interfaces with sandboxed compilation runtimes and the external backtesting APIs.
-- **Responsibilities**: Manages API calls, authentication sessions, connection queues, and timeout recovery.
 
 #### Profile: Simulation Operator Agent
 *   **Department**: Execution Department
@@ -92,19 +82,11 @@ The Execution Department interfaces with sandboxed compilation runtimes and the 
 
 ---
 
-### 4. Knowledge Department
-The Knowledge Department manages data persistence, links experiments, and evaluates portfolio fit.
-- **Responsibilities**: Updates the Knowledge Graph and Experiment Graph, manages historical logs, and computes cross-strategy correlation metrics.
-- **Governing Concepts**: Knowledge Graph, Experiment Graph, Research Memory, Portfolio Intelligence.
-
----
-
-### 5. Learning Department
+### 3. Learning Department
 The Learning Department refines system heuristics by analyzing operational and strategy failures.
-- **Responsibilities**: Evaluates simulation errors, classifies failure causes, and updates hypothesis generation weights.
 
 #### Profile: Memory & Evaluation Agent
-*   **Department**: Learning & Knowledge Departments (Joint/Cross-departmental role)
+*   **Department**: Learning Department (coordinates with Knowledge Department)
 *   **Responsibilities**:
     - Parse raw simulation results and code logs.
     - Classify failure modes for failed backtests.
@@ -119,7 +101,17 @@ The Learning Department refines system heuristics by analyzing operational and s
 
 ---
 
-### 6. Portfolio Department
-The Portfolio Department ensures strategy diversification.
-- **Responsibilities**: Reviews successful alpha candidates, runs cross-correlation analysis, and structures candidates into a unified portfolio representation.
-- **Governing Concepts**: Portfolio Intelligence.
+### 4. Knowledge Department
+Manages the long-term compound data storage.
+- **Responsibilities**: Maintains the Knowledge Graph, Experiment Graph, and Research Memory.
+
+---
+
+### 5. Portfolio Department
+Governs correlation limits and strategy diversification.
+- **Responsibilities**: Conducts cross-correlation checks and packages strategy candidates.
+
+---
+
+### 6. Infrastructure Department
+Coordinates hardware resources, data directories, and network transport configurations.

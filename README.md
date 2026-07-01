@@ -1,6 +1,6 @@
 # SYNTHRA
 
-SYNTHRA is an Autonomous Quantitative Research Operating System (AQROS) designed to automate the lifecycle of quantitative strategy development (alphas) for the WorldQuant BRAIN platform. The system operates exclusively within the boundaries of official WorldQuant BRAIN APIs and platform capabilities.
+SYNTHRA is an Autonomous Quantitative Research Operating System (AQROS) designed to automate the quantitative research lifecycle for the WorldQuant BRAIN platform. The system operates exclusively within the boundaries of official WorldQuant BRAIN APIs and platform capabilities.
 
 ---
 
@@ -24,12 +24,12 @@ SYNTHRA manages the research pipeline through a structured lifecycle:
 
 ---
 
-## How SYNTHRA Thinks
+## The Primary Goal: Knowledge Generation
 
-SYNTHRA operates under the principle that research must precede code. It treats software engineering as an enablement layer for quantitative research.
-*   **Hypothesis-Driven**: Every experiment must exist to validate or invalidate a specific economic hypothesis. Generating expressions without a clear research objective is prohibited.
-*   **Compounding Memory**: The system logs all simulation parameters, expressions, performance metrics, and failure codes. Failed backtests are analyzed and classified to prevent future generation models from repeating invalid research pathways.
-*   **Systemic Optimization**: We focus on refining the system design, constraints, and feedback loops rather than fine-tuning prompts. 
+A core philosophy of SYNTHRA is that the primary output of the system is **Knowledge**, not alphas. Alphas are valuable byproducts of a structured scientific process.
+*   **The Compounding Database**: Every simulation parameter, expression, dataset combination, and failure log is cataloged. By mapping experiments to a structured Knowledge Graph, the system learns what *does not* work, pruning unviable paths.
+*   **Hypothesis-Driven**: Every experiment must validate or invalidate a specific economic hypothesis. Generating expressions without a clear research objective is prohibited.
+*   **Systemic Optimization**: We focus on refining the system design, constraints, and feedback loops rather than fine-tuning prompts.
 
 ---
 
