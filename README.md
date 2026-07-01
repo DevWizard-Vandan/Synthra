@@ -1,73 +1,40 @@
 # SYNTHRA
 
-SYNTHRA is an autonomous quantitative research operating system designed to automate the end-to-end lifecycle of quantitative strategy development (alphas) for the WorldQuant BRAIN platform. The system operates exclusively within the boundaries of official WorldQuant BRAIN APIs and platform capabilities.
+SYNTHRA is an Autonomous Quantitative Research Operating System (AQROS) designed to automate the lifecycle of quantitative strategy development (alphas) for the WorldQuant BRAIN platform. The system operates exclusively within the boundaries of official WorldQuant BRAIN APIs and platform capabilities.
 
 ---
 
 ## Why SYNTHRA Exists
 
-Quantitative research on modern platforms is often constrained by human bottlenecks in hypothesis generation, translation of ideas into code, and structured evaluation. While previous tools like QuantForge focused on automated alpha generation, they lacked a unified, stateful architecture to manage the entire scientific loop. 
+Quantitative research on modern platforms is often constrained by human bottlenecks in hypothesis generation, translation of ideas into code, and structured evaluation. While previous tools focused on automated alpha generation, they lacked a unified, stateful architecture to manage the entire scientific loop. 
 
 SYNTHRA is built to resolve these limitations by treating the research process as a closed-loop engineering system. Rather than generating high-volume, random mathematical expressions, SYNTHRA structures research around economic rationale, systematic backtesting, and persistent memory accumulation. It is designed to act as an autonomous research organization that compounds knowledge from both successful and failed simulations.
 
 ---
 
+## What SYNTHRA Does
+
+SYNTHRA manages the research pipeline through a structured lifecycle:
+1.  **Campaign Formulation**: Research is organized into campaigns constrained by specific regions, universes, and economic themes.
+2.  **Hypothesis Generation**: The system builds economically sound hypotheses mapping available datasets to targeted market anomalies.
+3.  **Expression Synthesis**: The hypotheses are compiled into syntactically correct alpha expressions in either Fast Expression or Python formats.
+4.  **Simulation & Backtesting**: Expressions are simulated via the official WorldQuant BRAIN ACE API.
+5.  **Portfolio Evaluation**: Results are evaluated for correlation, decay, and turnover to ensure they diversify the existing alpha portfolio.
+6.  **Candidate Selection**: The system packages successful strategies as candidates and presents them for human review and approval. Human oversight is maintained for final submission tasks.
+
+---
+
+## How SYNTHRA Thinks
+
+SYNTHRA operates under the principle that research must precede code. It treats software engineering as an enablement layer for quantitative research.
+*   **Hypothesis-Driven**: Every experiment must exist to validate or invalidate a specific economic hypothesis. Generating expressions without a clear research objective is prohibited.
+*   **Compounding Memory**: The system logs all simulation parameters, expressions, performance metrics, and failure codes. Failed backtests are analyzed and classified to prevent future generation models from repeating invalid research pathways.
+*   **Systemic Optimization**: We focus on refining the system design, constraints, and feedback loops rather than fine-tuning prompts. 
+
+---
+
 ## Long-Term Vision
 
-The five-year objective for SYNTHRA is to achieve fully autonomous, self-directed quantitative research. This means the system will independently generate viable economic hypotheses, map them to appropriate datasets, construct expressions, run simulations, evaluate portfolios, and submit diversified candidates to WorldQuant BRAIN without human intervention.
+The five-year objective for SYNTHRA is to achieve fully autonomous, self-directed quantitative research. This means the system will independently generate viable economic hypotheses, map them to appropriate datasets, construct expressions, run simulations, evaluate portfolios, and prepare diversified candidates for human approval.
 
-In the ten-year horizon, SYNTHRA aims to evolve into a decentralized network of specialized research nodes that collaborate, share learnings via privacy-preserving federated memory, and continuously adapt to platform regime shifts.
-
----
-
-## Project Goals
-
-1.  **Closed-Loop Automation**: Automate idea discovery, dataset mapping, expression synthesis, simulation execution, and result analysis.
-2.  **Rigor Over Scale**: Prioritize high-quality, economically sound hypotheses over brute-force mathematical mutations.
-3.  **Knowledge Compounding**: Build a structured, queryable research database that logs every experiment, ensuring the system does not repeat failures and continuously optimizes parameters.
-4.  **Portfolio Diversification**: Focus on submitting low-correlation alphas to build robust, multi-strategy portfolios rather than single high-performing outliers.
-
----
-
-## High-Level Architecture
-
-SYNTHRA is structured as a decoupled, layered system to maintain separation of concerns and facilitate modular replacements:
-
-*   **Orchestration Layer**: Manages execution state, schedules research campaigns, and coordinates specialized agents.
-*   **Knowledge & Memory Layer**: Logs historical experiments, maintains correlation matrices, and indexes past alpha performances to prevent redundant research.
-*   **Execution Layer**: Directly interfaces with the official WorldQuant BRAIN APIs (such as the Simulation and Data APIs) inside a sandboxed environment.
-*   **Learning & Evaluation Layer**: Analyzes simulation failures, updates hypothesis generation parameters, and optimizes alpha selection algorithms based on empirical results.
-
----
-
-## Repository Structure
-
-```
-SYNTHRA/
-├── README.md                 # Project introduction and design summary
-├── CLAUDE.md                 # Agent operating manual and coding instructions
-└── docs/
-    ├── VISION.md             # Multi-year strategic goals and success metrics
-    ├── CONSTITUTION.md       # Safety boundaries, core tenets, and non-goals
-    ├── ARCHITECTURE.md       # High-level component design and interaction layers
-    ├── ROADMAP.md            # Realistic milestones and release timeline
-    ├── AGENTS.md             # Detailed profiles, tools, and failure states of AI agents
-    ├── CODING_STANDARDS.md   # Formatting, testing, and pull request requirements
-    ├── RESEARCH_PHILOSOPHY.md # Scientific method and quantitative principles
-    └── DECISIONS.md          # Architecture Decision Records (ADR) log
-```
-
----
-
-## Development Philosophy
-
-The development of SYNTHRA is guided by strict software engineering principles:
-*   **Architecture First**: System design and interface specifications must be fully documented before code is written.
-*   **Modularity**: Every module must have a single responsibility. Any component (including the underlying LLM, database, or simulation wrapper) should be replaceable without affecting the rest of the system.
-*   **Empirical Decisions**: We prioritize empirical performance data and logical proof over assumptions.
-
----
-
-## Current Development Status
-
-The project is currently in the **Architecture & Planning Phase (Milestone 0)**. The repository contains the core specifications, design frameworks, and standard operating procedures. Implementation of the core simulation interfaces and the orchestration bus is scheduled for the next phase.
+In the long term, SYNTHRA aims to evolve into a continuously learning research platform capable of expanding across multiple quantitative research domains, adapting to market regime changes, and dynamically adjusting resource allocation based on performance metrics.

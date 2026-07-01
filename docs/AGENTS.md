@@ -1,139 +1,125 @@
-# SYNTHRA Agent Specifications
+# SYNTHRA Agent & Department Specifications
 
-This document defines the roles, input-output schemas, communication channels, memory structures, tools, failure states, and success criteria for all active agents in SYNTHRA.
-
----
-
-## 🤖 Agent Specifications
-
-### 1. Hypothesis Generator Agent
-
-#### Responsibilities
-- Systematically review available platform datasets and metadata.
-- Retrieve past campaign results and performance profiles.
-- Generate testable economic hypotheses.
-- Output a detailed research brief detailing the target datasets, mathematical operations, and execution logic.
-
-#### Interfaces & Data Flow
-- **Inputs**: 
-  - Campaign parameters (region, holding period, universe constraints).
-  - Platform dataset catalog metadata (data fields, descriptions, frequencies).
-  - Relevant vector search results from historical successful and failed strategies.
-- **Outputs**:
-  - Structured research brief containing:
-    - Verifiable economic hypothesis.
-    - List of targeted datasets.
-    - Proposed mathematical operators.
-    - Rationale for expected predictability.
-
-#### Capabilities & Integrations
-- **Memory**: Vector Semantic Store (read-only) to query past experiments.
-- **Tools**: Dataset catalog parser.
-- **Communication**: Receives task instructions from the Agent Coordinator; sends research briefs to the Code Synthesizer.
-
-#### Failure Modes & Mitigations
-- *Failure Mode*: Generating mathematically complex but economically meaningless hypotheses.
-  - *Mitigation*: Hard-coded constraints forcing the agent to map the hypothesis to a specific list of core economic variables (e.g., value, momentum, growth, liquidity).
-- *Failure Mode*: Proposing datasets or operators that do not exist or are unavailable for the target region.
-  - *Mitigation*: Schema validation against the platform dataset registry before final output.
-
-#### Success Criteria
-- The research brief maps to available datasets and operators.
-- The hypothesis is classified as unique (less than `0.30` semantic similarity to existing hypotheses).
+This document defines the organizational structure of SYNTHRA's agentic systems, grouping active agents into specialized Departments to maintain separation of concerns and clear functional boundaries.
 
 ---
 
-### 2. Code Synthesizer Agent
+## 🏛️ Departmental Structure
 
-#### Responsibilities
-- Translate the economic logic from a research brief into valid alpha expressions.
-- Synthesize code in both WorldQuant BRAIN Fast Expression format and Python script format.
-- Perform basic syntax checking.
+Agents do not operate in a flat list. To coordinate complex campaigns, agents belong to specialized Departments. Communication between departments is managed through formal interfaces, and access to tools is governed at the department level.
 
-#### Interfaces & Data Flow
-- **Inputs**:
-  - Research brief from the Hypothesis Generator.
-  - Coding standards specification.
-  - Syntax templates and examples of successful expressions.
-- **Outputs**:
-  - Alpha expression code block (Fast Expression string or Python function code).
-  - Verification checklist demonstrating syntactic alignment.
-
-#### Capabilities & Integrations
-- **Memory**: Local code template database (read-only).
-- **Tools**: Local syntax checker, AST (Abstract Syntax Tree) validator.
-- **Communication**: Receives briefs from the Hypothesis Generator; sends code blocks to the Simulation Operator.
-
-#### Failure Modes & Mitigations
-- *Failure Mode*: Generating syntax errors (e.g., mismatched parentheses, invalid operator naming).
-  - *Mitigation*: Local AST parsing and evaluation against the platform's operator grammar rules prior to transmission.
-- *Failure Mode*: Hallucinating non-existent datasets or functions.
-  - *Mitigation*: Code-generation prompts restricted by strict schema definitions.
-
-#### Success Criteria
-- Synthesized code passes local syntax checks and AST validations with zero errors.
+```
+                  +--------------------------------+
+                  |      PLANNING DEPARTMENT       |
+                  |  Task scheduling and governing |
+                  +--------------------------------+
+                                  |
+            +---------------------+---------------------+
+            |                     |                     |
++----------------------+ +------------------+ +-------------------+
+|  RESEARCH DEPT       | |  KNOWLEDGE DEPT  | |  EXECUTION DEPT   |
+|  Hypotheses and code | |  Graphs & memory | |  Simulations      |
++----------------------+ +------------------+ +-------------------+
+            |                     |                     |
+            +---------------------+---------------------+
+                                  |
+                        +------------------+
+                        |  LEARNING DEPT   |
+                        |  Failure analysis|
+                        +------------------+
+```
 
 ---
 
-### 3. Simulation Operator Agent
+## 🏢 Departments & Agent Profiles
 
-#### Responsibilities
-- Intermediary between the code synthesis and the WorldQuant BRAIN execution engine.
-- Format inputs, send requests to the Simulation Client, monitor backtest status, and parse the raw performance payload.
-
-#### Interfaces & Data Flow
-- **Inputs**:
-  - Alpha expression code block.
-  - Backtest parameters (region, universe, delay).
-- **Outputs**:
-  - Structured simulation results (Sharpe ratio, turnover, fitness, margin, drawdowns).
-  - Raw stdout/stderr log output.
-
-#### Capabilities & Integrations
-- **Memory**: None (stateless runtime).
-- **Tools**: Simulation Client connection wrapper.
-- **Communication**: Receives code blocks from the Code Synthesizer; sends simulation records to the Memory & Evaluation Agent.
-
-#### Failure Modes & Mitigations
-- *Failure Mode*: Network timeout or API throttling.
-  - *Mitigation*: Implemented exponential backoff and retry queues in the Simulation Client.
-- *Failure Mode*: Infinite loop or hanging backtest.
-  - *Mitigation*: Enforce timeout thresholds (e.g., maximum 300 seconds per simulation).
-
-#### Success Criteria
-- Receives a terminal response (success or failure log) from the ACE API.
-- Correctly parses the performance payload.
+### 1. Planning Department
+The Planning Department coordinates system activity, schedules campaign tasks, and monitors system safety.
+- **Responsibilities**: Generates execution schedules, monitors agent dependencies, and blocks operations that violate system constraints.
+- **Governing Concepts**: Planner, Governor.
 
 ---
 
-### 4. Memory & Evaluation Agent
+### 2. Research Department
+The Research Department translates economic concepts into testable code.
+- **Responsibilities**: Formulates economic hypotheses based on campaign parameters and compiles them into syntactically valid alpha expressions.
 
-#### Responsibilities
-- Parse, classify, and persist research outcomes.
-- Analyze failed simulations to identify root causes.
-- Write records to the Experiment Database and vectorize logs for the Semantic Store.
+#### Profile: Hypothesis Generator Agent
+*   **Department**: Research Department
+*   **Responsibilities**:
+    - Review available datasets and metadata boundaries.
+    - Generate economically sound hypotheses based on campaign themes.
+    - Output a structured research brief detailing the target variables and operators.
+*   **Interfaces & Data Flow**:
+    - *Inputs*: Campaign parameters, dataset metadata profiles.
+    - *Outputs*: Structured research brief (economic rationale, target variables, math operators).
+*   **Memory & Tools**: Read-only access to Research Memory; dataset catalog query tool.
+*   **Failure Modes & Mitigations**:
+    - *Failure Mode*: Generating hypotheses that cannot be translated to expressions.
+      - *Mitigation*: Hard-coded schema templates enforcing variable mapping.
 
-#### Interfaces & Data Flow
-- **Inputs**:
-  - Structured simulation results and logs.
-  - Original research brief and expression code.
-- **Outputs**:
-  - Relational database record entry.
-  - Semantic vector payload.
-  - Summary report for the Agent Coordinator.
+#### Profile: Code Synthesizer Agent
+*   **Department**: Research Department
+*   **Responsibilities**:
+    - Translate research briefs into syntactically correct expressions (Fast Expression or Python formats).
+    - Perform initial AST validation on code.
+*   **Interfaces & Data Flow**:
+    - *Inputs*: Research brief, syntax templates, standard example libraries.
+    - *Outputs*: Alpha expression code string.
+*   **Memory & Tools**: Read-only template memory; local AST syntax parser.
+*   **Failure Modes & Mitigations**:
+    - *Failure Mode*: Generating code that violates platform syntax limits.
+      - *Mitigation*: Strict grammar verification against local platform rules before output.
 
-#### Capabilities & Integrations
-- **Memory**: Relational Experiment Database (write-only), Vector Semantic Store (write-only).
-- **Tools**: Vector embedding generator, error classification heuristics.
-- **Communication**: Receives simulation records from the Simulation Operator; updates system memory; notifies the Agent Coordinator of completion.
+---
 
-#### Failure Modes & Mitigations
-- *Failure Mode*: Database write lock or transaction failure.
-  - *Mitigation*: Transaction logs written to temporary local files to prevent data loss.
-- *Failure Mode*: Incorrect classification of errors (e.g., classifying a platform issue as a syntax error).
-  - *Mitigation*: Strict regex pattern matching on official API error codes.
+### 3. Execution Department
+The Execution Department interfaces with sandboxed compilation runtimes and the external backtesting APIs.
+- **Responsibilities**: Manages API calls, authentication sessions, connection queues, and timeout recovery.
 
-#### Success Criteria
-- The database record is successfully written.
-- The vector embedding is generated and stored.
-- The Hypothesis Generator's prompt weights are updated.
+#### Profile: Simulation Operator Agent
+*   **Department**: Execution Department
+*   **Responsibilities**:
+    - Send expressions to the official WorldQuant BRAIN ACE API.
+    - Monitor simulation status and extract raw performance statistics.
+*   **Interfaces & Data Flow**:
+    - *Inputs*: Alpha expression code, simulation run parameters.
+    - *Outputs*: Raw performance logs and simulation metrics.
+*   **Memory & Tools**: Stateless runtime; Simulation Client interface connection.
+*   **Failure Modes & Mitigations**:
+    - *Failure Mode*: API rate-limiting or network timeout.
+      - *Mitigation*: Exponential backoff queue management.
+
+---
+
+### 4. Knowledge Department
+The Knowledge Department manages data persistence, links experiments, and evaluates portfolio fit.
+- **Responsibilities**: Updates the Knowledge Graph and Experiment Graph, manages historical logs, and computes cross-strategy correlation metrics.
+- **Governing Concepts**: Knowledge Graph, Experiment Graph, Research Memory, Portfolio Intelligence.
+
+---
+
+### 5. Learning Department
+The Learning Department refines system heuristics by analyzing operational and strategy failures.
+- **Responsibilities**: Evaluates simulation errors, classifies failure causes, and updates hypothesis generation weights.
+
+#### Profile: Memory & Evaluation Agent
+*   **Department**: Learning & Knowledge Departments (Joint/Cross-departmental role)
+*   **Responsibilities**:
+    - Parse raw simulation results and code logs.
+    - Classify failure modes for failed backtests.
+    - Log results in the Experiment Database and vectorize error metrics.
+*   **Interfaces & Data Flow**:
+    - *Inputs*: Simulation performance results and raw log outputs.
+    - *Outputs*: Database entry payload, vector semantic store entry.
+*   **Memory & Tools**: Relational DB connector, vector DB connector, error regex parsing tool.
+*   **Failure Modes & Mitigations**:
+    - *Failure Mode*: Database write conflicts under parallel tasks.
+      - *Mitigation*: Transaction queue logging to prevent data loss.
+
+---
+
+### 6. Portfolio Department
+The Portfolio Department ensures strategy diversification.
+- **Responsibilities**: Reviews successful alpha candidates, runs cross-correlation analysis, and structures candidates into a unified portfolio representation.
+- **Governing Concepts**: Portfolio Intelligence.

@@ -6,6 +6,11 @@ This Constitution defines the foundational constraints, principles, and boundari
 
 ## 🏛️ Core Principles
 
+### Principle Zero: Research Before Implementation
+Software exists to enable research. All engineering and system decisions must ultimately serve to improve quantitative research quality, reproducibility, and rigor. Whenever engineering convenience, library constraints, or development speed conflict with research rigor, research rigor wins.
+
+---
+
 ### 1. Project Principles
 - **Compliance First**: SYNTHRA must operate strictly within the boundaries of official WorldQuant BRAIN platform APIs. Any action that bypasses authorization, scrapers, or violates the platform's terms of service is prohibited.
 - **Compound Knowledge**: No simulation run is wasted. The system must capture, classify, and index every failure and success to improve future operations.
@@ -16,6 +21,7 @@ This Constitution defines the foundational constraints, principles, and boundari
 - **Modularity**: Every module must have a single, isolated responsibility. All external interfaces (such as databases, LLM APIs, and simulation runtimes) must be modular and replaceable.
 
 ### 3. Research Principles
+- **Hypothesis-Driven Experimentation**: Every experiment must answer a research question. Experiments should exist solely to validate or invalidate a specific economic hypothesis. Generating or mutating expressions without a clear research objective is prohibited.
 - **Economic Reason First**: The system must establish a clear economic hypothesis before writing mathematical expressions. Brute-force mutations of expressions without underlying financial logic are prohibited.
 - **Portfolio Focus**: We optimize for portfolio diversification and low correlation, not individual alpha outperformance. A mediocre strategy that is uncorrelated to the existing portfolio is more valuable than a high-performing strategy that duplicates existing risk exposures.
 
@@ -32,7 +38,7 @@ This Constitution defines the foundational constraints, principles, and boundari
 - **Comprehensive Testing**: Write unit tests for all public classes and functions. Maintain high coverage. Do not commit untested code.
 
 ### 7. Decision Principles
-- **Documented Rationale**: Every architectural pivot, dependency addition, or structural change must be logged as an Architecture Decision Record (ADR) in [DECISIONS.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/DECISIONS.md).
+- **Documented Rationale**: Every architectural pivot, dependency addition, or structural change must be logged as an Architecture Decision Record (ADR) in the [adr directory](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/adr/).
 
 ---
 
