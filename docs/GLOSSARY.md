@@ -23,18 +23,19 @@ This document provides concise definitions for essential WorldQuant BRAIN and SY
 
 ## 🤖 SYNTHRA Architecture Concepts
 
-- **Campaign**: A structured research initiative bounded by asset universe, region, holding period, and economic theme (rather than isolated alpha generation).
-- **Hypothesis**: A structured document defining an economic rationale explaining why a specific relationship should yield alpha.
-- **Experiment**: A single backtest execution mapping to a hypothesis, generating specific logs and performance metrics.
-- **Research Memory**: A persistence system caching historical campaign parameters, simulation logs, and performance metrics.
+- **Campaign (`CMP-XXXX`)**: The primary unit of research. It serves as the bounding context/repository for all hypotheses, experiments, and learnings, restricted by specific assets, regions, and themes.
+- **Hypothesis (`HYP-XXXX`)**: A structured document defining an economic rationale explaining why a specific relationship should yield predictability.
+- **Experiment (`EXP-XXXX`)**: A single backtest execution mapping to a hypothesis, generating specific logs and performance metrics.
+- **Research Asset (`AST-XXXX`)**: A code variant, generated expression, or dataset compilation produced during a campaign.
+- **Research Memory**: A persistence system caching historical campaign configurations, simulation logs, and performance metrics.
 - **Knowledge Graph**: A conceptual representation linking datasets, mathematical operators, economic themes, and their empirical performance.
 - **Experiment Graph**: A parent-child relational tree tracking the lineage of hypotheses, expression variations, and backtest results.
 - **Portfolio Intelligence**: The layer that evaluates cross-strategy correlation, information ratio contribution, and overall portfolio diversification.
-- **Planner**: The planning layer scheduler that coordinates campaign execution schedules and monitors agent workloads.
-- **Governor**: The compliance module that validates proposed agent actions against security boundaries and rate limits.
-- **LLM Router**: A reasoning utility that selects the optimal LLM size, context limit, and cost profile for a given agent task.
-- **Department**: A high-level organizational structure grouping related agents (e.g., Research Department, Execution Department).
+- **Planner**: The orchestration engine scheduling campaign tasks, managing dependencies, and routing messages.
+- **Governor**: The highest system authority ("CEO") enforcing security, compliance boundaries, and resource budgets.
+- **LLM Router**: A reasoning utility selecting the optimal model size, context limit, and cost profile for a given agent task.
+- **Department**: An organizational structure grouping related agents (e.g., Research Department, Execution Department).
 - **Agent**: A modular, single-responsibility AI actor executing tasks inside a department.
-- **ADR (Architecture Decision Record)**: A document capturing a design choice, its context, and its trade-offs.
-- **RFC (Request for Comments)**: A proposal detailing a new feature or design specification, circulated for review before writing code.
-- **Specification**: A document detailing the precise technical requirements and interface designs for a system component.
+- **ADR (`ADR-XXXX`)**: Architecture Decision Record; a document capturing a design choice, its context, and its trade-offs.
+- **RFC (`RFC-XXXX`)**: Request for Comments; a proposal detailing a new feature or design specification, circulated for review before writing code.
+- **Specification (`SPEC-XXXX`)**: A document detailing the precise technical requirements and interface designs for a system component.

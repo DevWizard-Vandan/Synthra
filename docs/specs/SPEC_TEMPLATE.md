@@ -5,7 +5,7 @@ spec:
   id: SPEC-XXXX
   title: "<Feature Name>"
   version: 1.0
-  status: Draft
+  status: Draft | Architecture Review | Approved | Implementation | Code Review | Verified | Frozen | Deprecated
   priority: Critical | High | Medium | Low
 
 owner: Project Architect
@@ -20,10 +20,26 @@ required_by:
 
 estimated_complexity:
 estimated_effort:
-
 ---
 
 # SPEC-XXXX — <Feature Name>
+
+---
+
+## 🏛️ Boundary Validation Questions
+
+Prior to architectural review and approval, the designer must document the answers to these five boundary validation questions:
+
+1.  **Why does this module exist?**
+    - *Answer*: [Explain the core problem this module solves and its necessity.]
+2.  **Why is this the right boundary?**
+    - *Answer*: [Define what lies inside and outside of this module's scope.]
+3.  **Could another module own this responsibility?**
+    - *Answer*: [Justify why this module must own this responsibility instead of existing modules.]
+4.  **What happens if this module disappears?**
+    - *Answer*: [Describe the cascading failures or architectural impacts of its absence.]
+5.  **Will we still like this design in two years?**
+    - *Answer*: [Detail the extensibility and durability of this structural choice.]
 
 ---
 
@@ -32,7 +48,6 @@ estimated_effort:
 Provide a concise overview of this module.
 
 Answer:
-
 - What is this module?
 - Why does it exist?
 - Why is it important?
@@ -48,7 +63,6 @@ Maximum length:
 Describe the engineering problem this module solves.
 
 Answer questions such as:
-
 - What limitation currently exists?
 - What risks occur if this module does not exist?
 - Why can't another module solve this problem?
@@ -60,7 +74,6 @@ Answer questions such as:
 Clearly define what this module MUST accomplish.
 
 Example format:
-
 - Objective 1
 - Objective 2
 - Objective 3
@@ -72,15 +85,11 @@ Objectives should be measurable.
 # 4. Non-Objectives
 
 Equally important.
-
 List everything this module intentionally DOES NOT do.
-
 This prevents feature creep.
 
 Example:
-
 This module will NOT:
-
 - ...
 - ...
 - ...
@@ -92,28 +101,19 @@ This module will NOT:
 Explain where this module lives.
 
 Include:
+- Current Layer
+- Department
+- Related Components
+- Neighbour Modules
+- Information Flow
 
-Current Layer
-
-Department
-
-Related Components
-
-Neighbour Modules
-
-Information Flow
-
-Example
-
+Example:
 Presentation
 ↓
-
 Planning
 ↓
-
 This Module
 ↓
-
 Execution
 
 ---
@@ -122,16 +122,13 @@ Execution
 
 List every responsibility.
 
-Example
-
+Example:
 The module SHALL
-
 - ...
 - ...
 - ...
 
 The module SHALL NOT
-
 - ...
 - ...
 - ...
@@ -144,65 +141,35 @@ Single Responsibility Principle should be obvious here.
 
 Describe every required capability.
 
-FR-001
-
-Description
-
-Priority
-
-Acceptance
-
-FR-002
-
-...
-
-Every requirement should have an identifier.
+- **FR-001**: Description | Priority: High | Acceptance: Verifiable metric.
+- **FR-002**: ...
 
 ---
 
 # 8. Non-Functional Requirements
 
-Performance
-
-Reliability
-
-Maintainability
-
-Security
-
-Scalability
-
-Extensibility
-
-Observability
-
-Usability (if applicable)
-
-Do NOT specify implementation.
-
-Specify behaviour.
+Specify behavioral attributes:
+- Performance
+- Reliability
+- Maintainability
+- Security
+- Scalability
+- Extensibility
+- Observability
 
 ---
 
 # 9. Public Interfaces
 
 Describe what other modules can access.
+Include:
+- Inputs
+- Outputs
+- Requests
+- Responses
+- Events
 
-Include
-
-Inputs
-
-Outputs
-
-Requests
-
-Responses
-
-Events
-
-Do NOT write code.
-
-Describe contracts only.
+Do NOT write code. Describe contracts only.
 
 ---
 
@@ -210,41 +177,25 @@ Describe contracts only.
 
 Describe the internal conceptual pieces.
 
-Example
+Example:
+- Validator
+- Loader
+- Parser
+- Cache
 
-Validator
-
-Loader
-
-Parser
-
-Cache
-
-Resolver
-
-...
-
-Responsibilities only.
-
-No implementation.
+Responsibilities only. No implementation details.
 
 ---
 
 # 11. Data Model
 
 If the module owns data.
-
 Describe:
-
-Entities
-
-Relationships
-
-Identifiers
-
-Lifecycle
-
-Ownership
+- Entities
+- Relationships
+- Identifiers
+- Lifecycle
+- Ownership
 
 No database schema yet.
 
@@ -254,61 +205,16 @@ No database schema yet.
 
 Describe module lifecycle.
 
-Example
-
-Created
-
-↓
-
-Initialized
-
-↓
-
-Validated
-
-↓
-
-Ready
-
-↓
-
-Running
-
-↓
-
-Stopped
-
-↓
-
-Disposed
+Example:
+Created -> Initialized -> Validated -> Ready -> Running -> Stopped -> Disposed
 
 ---
 
 # 13. Event Model
 
 Since SYNTHRA is event-driven.
-
-List every event.
-
-Example
-
-ConfigurationRequested
-
-ConfigurationLoaded
-
-ConfigurationValidated
-
-ConfigurationFailed
-
-Each event should describe
-
-Producer
-
-Consumer
-
-Payload
-
-Purpose
+List every event:
+- **Event Name**: Producer | Consumer | Payload | Purpose
 
 ---
 
@@ -316,31 +222,11 @@ Purpose
 
 Describe expected failures.
 
-Example
-
-Missing configuration
-
-↓
-
-Fail Fast
-
-Network unavailable
-
-↓
-
-Retry
-
-Invalid state
-
-↓
-
-Abort
-
-Unexpected exception
-
-↓
-
-Bubble upward
+Example:
+- Missing configuration -> Fail Fast
+- Network unavailable -> Retry
+- Invalid state -> Abort
+- Unexpected exception -> Bubble upward
 
 Never swallow exceptions.
 
@@ -349,18 +235,12 @@ Never swallow exceptions.
 # 15. Logging Strategy
 
 What should be logged?
-
-Startup
-
-Shutdown
-
-Warnings
-
-Errors
-
-Performance
-
-Critical Events
+- Startup
+- Shutdown
+- Warnings
+- Errors
+- Performance metrics
+- Critical Events
 
 Avoid logging sensitive data.
 
@@ -368,17 +248,12 @@ Avoid logging sensitive data.
 
 # 16. Security Considerations
 
-Does this module
-
-Access secrets?
-
-Access network?
-
-Access filesystem?
-
-Execute code?
-
-Manage permissions?
+Does this module:
+- Access secrets?
+- Access network?
+- Access filesystem?
+- Execute code?
+- Manage permissions?
 
 Explain boundaries.
 
@@ -386,113 +261,61 @@ Explain boundaries.
 
 # 17. Configuration Requirements
 
-List every configurable behaviour.
-
-Do not specify format.
-
-Only describe configurable concepts.
+List every configurable behavior.
+Do not specify format. Only describe configurable concepts.
 
 ---
 
 # 18. Dependencies
 
-Internal dependencies
-
-External dependencies
-
-Future dependencies
-
-Dependency direction
-
+- Internal dependencies
+- External dependencies
+- Dependency direction
 Explain WHY.
 
 ---
 
 # 19. Testing Strategy
 
-Unit Tests
+Outline test categories:
+- Unit Tests
+- Integration Tests
+- Failure Tests
+- Boundary Tests
 
-Integration Tests
-
-Failure Tests
-
-Boundary Tests
-
-Performance Tests
-
-Regression Tests
-
-Testing philosophy.
-
-Not implementation.
+Testing philosophy, not implementation.
 
 ---
 
 # 20. Acceptance Criteria
 
-This is the contract.
-
-The SPEC is considered implemented only if:
-
-✅
-
-✅
-
-✅
-
-Every item should be objectively verifiable.
+This is the contract. The SPEC is considered implemented only if:
+✅ Item 1
+✅ Item 2
 
 ---
 
 # 21. Out of Scope
 
-Explicitly list
-
-What will NOT be implemented.
-
-This section is mandatory.
+Explicitly list what will NOT be implemented. This section is mandatory.
 
 ---
 
 # 22. Future Expansion
 
-Possible future enhancements.
-
-These are NOT current requirements.
-
-Simply document future possibilities.
+Possible future enhancements. These are NOT current requirements.
 
 ---
 
 # 23. Risks
 
-Technical Risks
-
-Operational Risks
-
-Maintenance Risks
-
-Performance Risks
-
-Research Risks
-
-Each should include
-
-Risk
-
-Impact
-
-Mitigation
+- **Risk**: Description | Impact: High | Mitigation: Strategy.
 
 ---
 
 # 24. Alternatives Considered
 
-Document other architectural options.
-
-Explain why they were rejected.
-
-This becomes valuable months later.
+Document other options and why they were rejected.
 
 ---
 
@@ -500,25 +323,14 @@ This becomes valuable months later.
 
 List unresolved questions.
 
-Do NOT guess.
-
-Document uncertainty.
-
 ---
 
 # 26. References
 
-Architecture.md
-
-Constitution.md
-
-Relevant ADRs
-
-Relevant RFCs
-
-Relevant Research Documents
-
-External Documentation
+- Architecture.md
+- Constitution.md
+- Relevant ADRs
+- Relevant RFCs
 
 ---
 
@@ -533,45 +345,25 @@ External Documentation
 # 28. Implementation Checklist
 
 Before Implementation
-
 ☐ Reviewed
-
 ☐ Approved
-
 ☐ Dependencies Ready
-
 ☐ ADR Required?
 
 Implementation
-
 ☐ Code Complete
-
 ☐ Tests Complete
-
 ☐ Documentation Updated
-
 ☐ Logging Verified
-
 ☐ Error Handling Verified
 
 Post Implementation
-
 ☐ Reviewed
-
 ☐ Accepted
-
 ☐ Frozen
 
 ---
 
-# Architect Notes
+## Architect Notes
 
-Free-form notes.
-
-Engineering reasoning.
-
-Trade-offs.
-
-Lessons learned.
-
-Anything valuable for future engineers.
+Free-form notes, engineering reasoning, trade-offs, and lessons learned.

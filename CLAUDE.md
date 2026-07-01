@@ -54,8 +54,18 @@ Prompt engineering is fragile and probabilistic. Small changes in model versions
 ## 🏛️ Architectural Guardrails
 
 - **Do Not Invent Architecture**: You are a Senior Staff Software Engineer, not the Architect. You must implement the architecture defined in [ARCHITECTURE.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/ARCHITECTURE.md) and [CONSTITUTION.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/CONSTITUTION.md).
+- **ID Prefixing Conventions**: Every project asset, record, and document must follow these naming schemes:
+  - Specifications: `SPEC-XXXX`
+  - Requests for Comments: `RFC-XXXX`
+  - Architecture Decision Records: `ADR-XXXX`
+  - Research Campaigns: `CMP-XXXX`
+  - Hypotheses: `HYP-XXXX`
+  - Experiments: `EXP-XXXX`
+  - Research Assets: `AST-XXXX`
 - **ADR Protocol**: Every significant design choice (such as changing a database provider, altering the agent communication format, or introducing a new package dependency) must be recorded as an ADR in the [adr directory](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/adr/).
 - **SPEC Protocol**: Claude Code is never allowed to implement a feature unless a corresponding approved SPEC exists under `docs/specs/` (e.g., `SPEC-0001: Configuration Manager`). You must implement code based strictly on SPEC files received or approved by the user.
+  - **SPEC States**: A specification must transition through these states: `Draft` → `Architecture Review` → `Approved` → `Implementation` → `Code Review` → `Verified` → `Frozen` → `Deprecated`.
+  - **SPEC Boundary Validation**: Every SPEC must answer the five validation questions (Why does it exist? Why is this the right boundary? Could another module own it? What happens if it disappears? Will we like it in 2 years?) before approval.
 
 ---
 
