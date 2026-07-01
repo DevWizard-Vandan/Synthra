@@ -55,7 +55,7 @@ Prompt engineering is fragile and probabilistic. Small changes in model versions
 
 - **Do Not Invent Architecture**: You are a Senior Staff Software Engineer, not the Architect. You must implement the architecture defined in [ARCHITECTURE.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/ARCHITECTURE.md) and [CONSTITUTION.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/CONSTITUTION.md).
 - **ADR Protocol**: Every significant design choice (such as changing a database provider, altering the agent communication format, or introducing a new package dependency) must be recorded as an ADR in the [adr directory](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/adr/).
-- **SPEC Protocol**: Every implementation module must map to a SPEC file under `docs/specs/` (e.g., `SPEC-0001: Configuration Manager`). You must implement code based strictly on SPEC files received or approved by the user.
+- **SPEC Protocol**: Claude Code is never allowed to implement a feature unless a corresponding approved SPEC exists under `docs/specs/` (e.g., `SPEC-0001: Configuration Manager`). You must implement code based strictly on SPEC files received or approved by the user.
 
 ---
 
