@@ -1,63 +1,47 @@
-# Synthra Constitution
+# SYNTHRA Constitution
 
-> **Status:** Draft / Active  
-> **Version:** 1.0.0  
-> **Last Updated:** 2026-07-01  
+This Constitution defines the foundational constraints, principles, and boundaries governing SYNTHRA. It is the primary reference for all architectural, coding, and research decisions.
 
 ---
 
-## 📜 Preamble
+## 🏛️ Core Principles
 
-This Constitution defines the core values, safety guardrails, and ethical principles that govern the Synthra platform, its developers, and the autonomous AI agents operating within its environments. All designs, integrations, and runtime behaviors must align with the tenets laid out in this document.
+### 1. Project Principles
+- **Compliance First**: SYNTHRA must operate strictly within the boundaries of official WorldQuant BRAIN platform APIs. Any action that bypasses authorization, scrapers, or violates the platform's terms of service is prohibited.
+- **Compound Knowledge**: No simulation run is wasted. The system must capture, classify, and index every failure and success to improve future operations.
 
----
+### 2. Engineering Principles
+- **Architecture First**: Do not write code without a documented design. Architectural diagrams and interfaces must precede implementation.
+- **Simplicity Over Cleverness**: Code must be explicit and readable. Avoid dynamic logic, complex meta-programming, or abstract patterns that hinder static code analysis.
+- **Modularity**: Every module must have a single, isolated responsibility. All external interfaces (such as databases, LLM APIs, and simulation runtimes) must be modular and replaceable.
 
-## 🔑 Core Values
+### 3. Research Principles
+- **Economic Reason First**: The system must establish a clear economic hypothesis before writing mathematical expressions. Brute-force mutations of expressions without underlying financial logic are prohibited.
+- **Portfolio Focus**: We optimize for portfolio diversification and low correlation, not individual alpha outperformance. A mediocre strategy that is uncorrelated to the existing portfolio is more valuable than a high-performing strategy that duplicates existing risk exposures.
 
-### 1. Rigor & Excellence
-We approach software engineering and AI systems with scientific rigor. Every design decision, optimization, and component must be well-thought-out, documented, and tested. We build robust systems that stand the test of time, avoiding quick hacks in favor of sustainable architectures.
+### 4. Documentation Principles
+- **Documentation Integrity**: Maintain precise and up-to-date documentation. Code changes and documentation updates must occur in the same pull request.
+- **Technical Rigor**: Avoid marketing language, buzzwords, and vague descriptions. Write with engineering clarity.
 
-### 2. Privacy & Security by Default
-All data processed within Synthra is private by default. AI agents must operate under the principle of least privilege, with explicit boundaries and permissions. We do not transmit user source code or credentials over unencrypted or untrusted channels.
+### 5. AI & Agent Principles
+- **Human-in-the-Loop Safeguards**: High-risk operations (such as making final submission calls or changing core security parameters) require explicit human approval.
+- **Least Privilege**: Active agents must operate within strict sandboxes with bounded directory access, rate limits, and network firewalls.
 
-### 3. Human-Agent Alignment
-AI agents in the Synthra ecosystem exist to empower humans, not to operate in a vacuum. Agents must maintain transparency in their decision-making processes, respect human boundaries, and seek explicit consent before executing high-risk or irreversible operations.
+### 6. Coding Principles
+- **Strict Typing**: All code (primarily Python >= 3.11) must use strict type hints.
+- **Comprehensive Testing**: Write unit tests for all public classes and functions. Maintain high coverage. Do not commit untested code.
 
-### 4. Transparency & Traceability
-Every decision made by the system, whether by a developer or an autonomous agent, should leave a clear, immutable audit trail. In-progress states, log directories, and agent history should be easily inspectable.
-
----
-
-## 🛡️ Guardrails & Safety Limits
-
-To guarantee system stability and user control, all runtimes and agents operating under Synthra must adhere to the following safety boundaries:
-
-```mermaid
-graph TD
-    A[Agent Action Request] --> B{Is it High Risk?}
-    B -- Yes --> C[Require Explicit User Consent]
-    B -- No --> D{Within Sandbox Limits?}
-    D -- Yes --> E[Execute Action]
-    D -- No --> F[Block Action & Log Warning]
-```
-
-### 1. Read-Write Isolation
-*   Agents must only write to designated directories unless explicitly commanded otherwise.
-*   Modification of system files, global shell environments, or system drivers is strictly forbidden.
-
-### 2. Execution Boundaries
-*   Network connections initiated by agents must be logged and, where possible, restricted to whitelisted API endpoints.
-*   Long-running background tasks must have timeouts and clear termination hooks.
-
-### 3. User Approval Policies
-*   **Destructive Actions**: Database dropping, hard deletes of source files, or cleaning branch histories require direct user confirmation.
-*   **Third-party Integrations**: Installing new modules, running unverified binaries, or downloading remote packages must be approved by the workspace owner.
+### 7. Decision Principles
+- **Documented Rationale**: Every architectural pivot, dependency addition, or structural change must be logged as an Architecture Decision Record (ADR) in [DECISIONS.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/DECISIONS.md).
 
 ---
 
-## ⚖️ Collaborative Governance
+## 🚫 Non-Goals: What SYNTHRA Will Never Become
 
-The Synthra environment is designed for collaboration. 
+To maintain focus and system integrity, we explicitly list the boundaries of what SYNTHRA will **not** do:
 
-1.  **Constitutional Updates**: Changes to this document require a formal pull request, review by the repository maintainers, and consensus among core contributors.
-2.  **Architectural Decision Records (ADRs)**: Technical decisions affecting the core structure must be documented in the [Decisions Log](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/DECISIONS.md) to ensure full context is retained.
+1.  **Real-Money Execution Platform**: SYNTHRA is designed solely for quantitative research, backtesting, and candidate submission within the WorldQuant BRAIN simulation environment. It will never connect to live brokerages, execute real-money trades, or manage live portfolios.
+2.  **Generic AI Chatbot/Copilot**: SYNTHRA is a structured, stateful operating system, not a chat wrapper or coding assistant. It interacts via APIs, queues, and automation pipelines, not conversational interfaces.
+3.  **Unauthorized Scraper**: The system will not use web scraping, session hijacking, or automated browser emulation to bypass official API gates. If an official API for a feature does not exist, the system will not support that feature.
+4.  **Brute-Force Equation Generator**: The platform will not generate random mathematical mutations in search of statistical anomalies. Every alpha generated must map to a verifiable economic hypothesis.
+5.  **Monolithic System**: We will never build a single-process, highly coupled application. The orchestration layer, database, simulation client, and reasoning agents must remain separate processes communicating over clear interfaces.

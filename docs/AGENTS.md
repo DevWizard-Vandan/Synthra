@@ -1,113 +1,139 @@
-# Synthra Agent Specification
+# SYNTHRA Agent Specifications
 
-> **Version:** 1.0.0  
-> **Topic:** Agent Interfaces, Protocols, and Sandbox Integration  
-
----
-
-## 🤖 Agent Taxonomy
-
-Synthra defines a hierarchy of agents, each designed for specific scopes of action:
-
-```
-                  +---------------------+
-                  |  Coordinator Agent  |  <--- Interface with User/CLI
-                  +---------------------+
-                             |
-              +--------------+--------------+
-              |                             |
-      +---------------+             +---------------+
-      |  Worker Agent |             | Specialist Agt|  <--- Focused on specific
-      |  (File/Code)  |             |  (e.g., DB)   |       tools / models
-      +---------------+             +---------------+
-```
-
-### 1. Coordinator Agent
-*   **Role**: Orchestrates the high-level task. It interacts directly with the user interface, writes the `implementation_plan.md`, tracks task progress via `task.md`, and compiles the `walkthrough.md`.
-*   **Capabilities**: Spawns worker and specialist subagents; monitors system states; manages human-in-the-loop loops.
-
-### 2. Worker Agent
-*   **Role**: Executes general development tasks, such as creating, reading, and editing source code files, and running build/test commands.
-*   **Capabilities**: Code editing, directory parsing, and local command execution.
-
-### 3. Specialist Agent
-*   **Role**: Interacts with external systems, databases, or API protocols (e.g., running docker configurations, performing science queries, clinical trials).
-*   **Capabilities**: Access to restricted toolsets with specialized models or prompt instructions.
+This document defines the roles, input-output schemas, communication channels, memory structures, tools, failure states, and success criteria for all active agents in SYNTHRA.
 
 ---
 
-## 📝 Interface Specifications
+## 🤖 Agent Specifications
 
-All agents must implement the base `ISynthraAgent` interface:
+### 1. Hypothesis Generator Agent
 
-```typescript
-interface ISynthraAgent {
-  id: string;
-  role: string;
-  capabilities: string[];
-  status: 'idle' | 'planning' | 'executing' | 'blocked' | 'done' | 'failed';
-  
-  // Lifecycle Hooks
-  initialize(sessionContext: ISessionContext): Promise<void>;
-  execute(taskPrompt: string): Promise<IExecutionResult>;
-  onMessageReceived(message: IAgentMessage): void;
-  terminate(): Promise<void>;
-}
-```
+#### Responsibilities
+- Systematically review available platform datasets and metadata.
+- Retrieve past campaign results and performance profiles.
+- Generate testable economic hypotheses.
+- Output a detailed research brief detailing the target datasets, mathematical operations, and execution logic.
 
-```python
-class BaseSynthraAgent:
-    def __init__(self, agent_id: str, role: str):
-        self.id = agent_id
-        self.role = role
-        self.status = "idle"
+#### Interfaces & Data Flow
+- **Inputs**: 
+  - Campaign parameters (region, holding period, universe constraints).
+  - Platform dataset catalog metadata (data fields, descriptions, frequencies).
+  - Relevant vector search results from historical successful and failed strategies.
+- **Outputs**:
+  - Structured research brief containing:
+    - Verifiable economic hypothesis.
+    - List of targeted datasets.
+    - Proposed mathematical operators.
+    - Rationale for expected predictability.
 
-    async def initialize(self, context: SessionContext) -> None:
-        """Runs initialization routines (loading tools, memory connection)."""
-        pass
+#### Capabilities & Integrations
+- **Memory**: Vector Semantic Store (read-only) to query past experiments.
+- **Tools**: Dataset catalog parser.
+- **Communication**: Receives task instructions from the Agent Coordinator; sends research briefs to the Code Synthesizer.
 
-    async def execute(self, prompt: str) -> ExecutionResult:
-        """Executes a task loop until finished or blocked."""
-        pass
-```
+#### Failure Modes & Mitigations
+- *Failure Mode*: Generating mathematically complex but economically meaningless hypotheses.
+  - *Mitigation*: Hard-coded constraints forcing the agent to map the hypothesis to a specific list of core economic variables (e.g., value, momentum, growth, liquidity).
+- *Failure Mode*: Proposing datasets or operators that do not exist or are unavailable for the target region.
+  - *Mitigation*: Schema validation against the platform dataset registry before final output.
 
----
-
-## 💬 Message Schema & Protocol
-
-Agents communicate over the Message Bus using structured JSON-RPC payloads. A standard message contains:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "msg_01H8X...",
-  "method": "agent.message",
-  "params": {
-    "sender": "coordinator_01",
-    "recipient": "worker_03",
-    "timestamp": "2026-07-01T20:34:00Z",
-    "payload": {
-      "type": "TASK_DELEGATION",
-      "task_id": "task_sub_42",
-      "content": "Create a unit test file for math_utils.py and run pytest."
-    }
-  }
-}
-```
-
-### Supported Message Types:
-*   `TASK_DELEGATION`: Sent by a Coordinator to a Worker with specific task details.
-*   `TASK_REPORT`: Sent by a Worker back to its parent detailing results or failures.
-*   `RESOURCE_REQUEST`: Sent by an agent to request extra filesystem or network permissions.
-*   `USER_PROMPT`: Sent by the Coordinator to solicit user feedback or choices.
+#### Success Criteria
+- The research brief maps to available datasets and operators.
+- The hypothesis is classified as unique (less than `0.30` semantic similarity to existing hypotheses).
 
 ---
 
-## 🔒 Sandboxing & Permission Requests
+### 2. Code Synthesizer Agent
 
-Agents are blocked from executing commands or accessing directories outside of the active workspace root. If an agent requires wider access, it must follow the **Permission Escalation Lifecycle**:
+#### Responsibilities
+- Translate the economic logic from a research brief into valid alpha expressions.
+- Synthesize code in both WorldQuant BRAIN Fast Expression format and Python script format.
+- Perform basic syntax checking.
 
-1.  **Intercept**: The sandbox controller intercepts a forbidden system call (e.g., editing a file in `C:\Windows\`).
-2.  **Request**: The agent sends a `RESOURCE_REQUEST` payload to the Coordinator.
-3.  **Human Verification**: The Coordinator presents a detailed prompt to the user explaining *why* the access is needed.
-4.  **Grant/Deny**: If the user approves, a temporary permission token is attached to the agent's runtime profile.
+#### Interfaces & Data Flow
+- **Inputs**:
+  - Research brief from the Hypothesis Generator.
+  - Coding standards specification.
+  - Syntax templates and examples of successful expressions.
+- **Outputs**:
+  - Alpha expression code block (Fast Expression string or Python function code).
+  - Verification checklist demonstrating syntactic alignment.
+
+#### Capabilities & Integrations
+- **Memory**: Local code template database (read-only).
+- **Tools**: Local syntax checker, AST (Abstract Syntax Tree) validator.
+- **Communication**: Receives briefs from the Hypothesis Generator; sends code blocks to the Simulation Operator.
+
+#### Failure Modes & Mitigations
+- *Failure Mode*: Generating syntax errors (e.g., mismatched parentheses, invalid operator naming).
+  - *Mitigation*: Local AST parsing and evaluation against the platform's operator grammar rules prior to transmission.
+- *Failure Mode*: Hallucinating non-existent datasets or functions.
+  - *Mitigation*: Code-generation prompts restricted by strict schema definitions.
+
+#### Success Criteria
+- Synthesized code passes local syntax checks and AST validations with zero errors.
+
+---
+
+### 3. Simulation Operator Agent
+
+#### Responsibilities
+- Intermediary between the code synthesis and the WorldQuant BRAIN execution engine.
+- Format inputs, send requests to the Simulation Client, monitor backtest status, and parse the raw performance payload.
+
+#### Interfaces & Data Flow
+- **Inputs**:
+  - Alpha expression code block.
+  - Backtest parameters (region, universe, delay).
+- **Outputs**:
+  - Structured simulation results (Sharpe ratio, turnover, fitness, margin, drawdowns).
+  - Raw stdout/stderr log output.
+
+#### Capabilities & Integrations
+- **Memory**: None (stateless runtime).
+- **Tools**: Simulation Client connection wrapper.
+- **Communication**: Receives code blocks from the Code Synthesizer; sends simulation records to the Memory & Evaluation Agent.
+
+#### Failure Modes & Mitigations
+- *Failure Mode*: Network timeout or API throttling.
+  - *Mitigation*: Implemented exponential backoff and retry queues in the Simulation Client.
+- *Failure Mode*: Infinite loop or hanging backtest.
+  - *Mitigation*: Enforce timeout thresholds (e.g., maximum 300 seconds per simulation).
+
+#### Success Criteria
+- Receives a terminal response (success or failure log) from the ACE API.
+- Correctly parses the performance payload.
+
+---
+
+### 4. Memory & Evaluation Agent
+
+#### Responsibilities
+- Parse, classify, and persist research outcomes.
+- Analyze failed simulations to identify root causes.
+- Write records to the Experiment Database and vectorize logs for the Semantic Store.
+
+#### Interfaces & Data Flow
+- **Inputs**:
+  - Structured simulation results and logs.
+  - Original research brief and expression code.
+- **Outputs**:
+  - Relational database record entry.
+  - Semantic vector payload.
+  - Summary report for the Agent Coordinator.
+
+#### Capabilities & Integrations
+- **Memory**: Relational Experiment Database (write-only), Vector Semantic Store (write-only).
+- **Tools**: Vector embedding generator, error classification heuristics.
+- **Communication**: Receives simulation records from the Simulation Operator; updates system memory; notifies the Agent Coordinator of completion.
+
+#### Failure Modes & Mitigations
+- *Failure Mode*: Database write lock or transaction failure.
+  - *Mitigation*: Transaction logs written to temporary local files to prevent data loss.
+- *Failure Mode*: Incorrect classification of errors (e.g., classifying a platform issue as a syntax error).
+  - *Mitigation*: Strict regex pattern matching on official API error codes.
+
+#### Success Criteria
+- The database record is successfully written.
+- The vector embedding is generated and stored.
+- The Hypothesis Generator's prompt weights are updated.

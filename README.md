@@ -1,89 +1,73 @@
-# Synthra
+# SYNTHRA
 
-> The unified orchestrator for next-generation agentic environments and autonomous system architectures.
-
-Synthra is an advanced, framework-agnostic coordination platform designed to build, test, and scale autonomous AI agent systems. It provides the core orchestration layer, message protocols, sandboxing boundaries, and state evaluation engines necessary to run complex workflows with high reliability.
+SYNTHRA is an autonomous quantitative research operating system designed to automate the end-to-end lifecycle of quantitative strategy development (alphas) for the WorldQuant BRAIN platform. The system operates exclusively within the boundaries of official WorldQuant BRAIN APIs and platform capabilities.
 
 ---
 
-## 📂 Project Directory Structure
+## Why SYNTHRA Exists
+
+Quantitative research on modern platforms is often constrained by human bottlenecks in hypothesis generation, translation of ideas into code, and structured evaluation. While previous tools like QuantForge focused on automated alpha generation, they lacked a unified, stateful architecture to manage the entire scientific loop. 
+
+SYNTHRA is built to resolve these limitations by treating the research process as a closed-loop engineering system. Rather than generating high-volume, random mathematical expressions, SYNTHRA structures research around economic rationale, systematic backtesting, and persistent memory accumulation. It is designed to act as an autonomous research organization that compounds knowledge from both successful and failed simulations.
+
+---
+
+## Long-Term Vision
+
+The five-year objective for SYNTHRA is to achieve fully autonomous, self-directed quantitative research. This means the system will independently generate viable economic hypotheses, map them to appropriate datasets, construct expressions, run simulations, evaluate portfolios, and submit diversified candidates to WorldQuant BRAIN without human intervention.
+
+In the ten-year horizon, SYNTHRA aims to evolve into a decentralized network of specialized research nodes that collaborate, share learnings via privacy-preserving federated memory, and continuously adapt to platform regime shifts.
+
+---
+
+## Project Goals
+
+1.  **Closed-Loop Automation**: Automate idea discovery, dataset mapping, expression synthesis, simulation execution, and result analysis.
+2.  **Rigor Over Scale**: Prioritize high-quality, economically sound hypotheses over brute-force mathematical mutations.
+3.  **Knowledge Compounding**: Build a structured, queryable research database that logs every experiment, ensuring the system does not repeat failures and continuously optimizes parameters.
+4.  **Portfolio Diversification**: Focus on submitting low-correlation alphas to build robust, multi-strategy portfolios rather than single high-performing outliers.
+
+---
+
+## High-Level Architecture
+
+SYNTHRA is structured as a decoupled, layered system to maintain separation of concerns and facilitate modular replacements:
+
+*   **Orchestration Layer**: Manages execution state, schedules research campaigns, and coordinates specialized agents.
+*   **Knowledge & Memory Layer**: Logs historical experiments, maintains correlation matrices, and indexes past alpha performances to prevent redundant research.
+*   **Execution Layer**: Directly interfaces with the official WorldQuant BRAIN APIs (such as the Simulation and Data APIs) inside a sandboxed environment.
+*   **Learning & Evaluation Layer**: Analyzes simulation failures, updates hypothesis generation parameters, and optimizes alpha selection algorithms based on empirical results.
+
+---
+
+## Repository Structure
 
 ```
-Synthra/
-├── README.md                 # Project overview and entrypoint (this file)
-├── .gitignore                # Git untracked files
-└── docs/                     # Detailed architectural and design documentation
-    ├── CONSTITUTION.md       # Ethical framework, values, and core principles
-    ├── VISION.md             # Long-term mission, goals, and horizons
-    ├── ROADMAP.md            # Execution milestones (near, mid, and long-term)
-    ├── ARCHITECTURE.md       # High-level architecture and system design
-    ├── AGENTS.md             # Agent interface spec, communication, and sandbox model
-    ├── CODING_STANDARDS.md   # Linting, testing, and styling protocols
-    ├── RESEARCH_PHILOSOPHY.md # Scientific approach to experiments and metrics
-    └── DECISIONS.md          # Architectural Decision Records (ADR) log
+SYNTHRA/
+├── README.md                 # Project introduction and design summary
+├── CLAUDE.md                 # Agent operating manual and coding instructions
+└── docs/
+    ├── VISION.md             # Multi-year strategic goals and success metrics
+    ├── CONSTITUTION.md       # Safety boundaries, core tenets, and non-goals
+    ├── ARCHITECTURE.md       # High-level component design and interaction layers
+    ├── ROADMAP.md            # Realistic milestones and release timeline
+    ├── AGENTS.md             # Detailed profiles, tools, and failure states of AI agents
+    ├── CODING_STANDARDS.md   # Formatting, testing, and pull request requirements
+    ├── RESEARCH_PHILOSOPHY.md # Scientific method and quantitative principles
+    └── DECISIONS.md          # Architecture Decision Records (ADR) log
 ```
 
 ---
 
-## 📖 Documentation Guide
+## Development Philosophy
 
-To understand the design and development guidelines of Synthra, explore the documents in the `docs/` directory:
-
-*   **[Constitution](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/CONSTITUTION.md)**: Establishes the core values, safety limits, and alignment tenets.
-*   **[Vision](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/VISION.md)**: Details the overarching mission, target horizons, and problem scope.
-*   **[Roadmap](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/ROADMAP.md)**: Tracks our development phases from foundation to full scale.
-*   **[Architecture](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/ARCHITECTURE.md)**: Outlines the system architecture, component breakdowns, and data flow.
-*   **[Agents Specification](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/AGENTS.md)**: Defines agent roles, messaging protocols, and runtime constraints.
-*   **[Coding Standards](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/CODING_STANDARDS.md)**: Coding patterns, testing metrics, and repository workflows.
-*   **[Research Philosophy](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/RESEARCH_PHILOSOPHY.md)**: Focuses on experimentation design, benchmarking, and evidence-driven development.
-*   **[Decisions Log (ADRs)](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/DECISIONS.md)**: Chronological register of architectural decisions (ADRs).
+The development of SYNTHRA is guided by strict software engineering principles:
+*   **Architecture First**: System design and interface specifications must be fully documented before code is written.
+*   **Modularity**: Every module must have a single responsibility. Any component (including the underlying LLM, database, or simulation wrapper) should be replaceable without affecting the rest of the system.
+*   **Empirical Decisions**: We prioritize empirical performance data and logical proof over assumptions.
 
 ---
 
-## 🚀 Getting Started
+## Current Development Status
 
-### Prerequisites
-
-Depending on the core engine runtime you choose:
-- **Node.js**: `>= 20.x`
-- **Python**: `>= 3.11`
-- **Docker**: For running containerized execution environments.
-
-### Quick Start
-
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/DevWizard-Vandan/Synthra.git
-   cd Synthra
-   ```
-
-2. **Initialize Environment**
-   Set up your configuration files by copying the template environment:
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Install Dependencies**
-   *   *For Python backend:*
-       ```bash
-       pip install -r requirements.txt
-       ```
-   *   *For Node.js orchestration:*
-       ```bash
-       npm install
-       ```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions to Synthra! Please ensure that you:
-1. Review the **[Coding Standards](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/CODING_STANDARDS.md)**.
-2. Follow the architectural constraints outlined in the **[Architecture Specification](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/ARCHITECTURE.md)**.
-3. Reference or create an Architecture Decision Record (ADR) in **[Decisions](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/DECISIONS.md)** if proposing breaking core changes.
-
----
-
-## 📄 License
-
-Synthra is released under the [MIT License](LICENSE).
+The project is currently in the **Architecture & Planning Phase (Milestone 0)**. The repository contains the core specifications, design frameworks, and standard operating procedures. Implementation of the core simulation interfaces and the orchestration bus is scheduled for the next phase.

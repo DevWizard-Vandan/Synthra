@@ -1,78 +1,67 @@
-# Synthra Roadmap
+# SYNTHRA Roadmap
 
-> **Version:** 1.0.0  
-> **Last Updated:** 2026-07-01  
-
----
-
-## 📅 Roadmap Overview
-
-This roadmap details the planned releases and feature tracks for the Synthra project. Our progress is split into three main phases, focusing on stability, developer experience, and multi-agent coordination.
-
-```
-       Phase 1                    Phase 2                    Phase 3
-  [ Core Engine & SDK ] ---> [ Agent Runtime & Collab ] ---> [ Developer Ecosystem ]
-     (Q1-Q2 2026)               (Q3-Q4 2026)               (Q1-Q2 2027)
-```
+This roadmap defines the engineering milestones, feature tracks, and version objectives for SYNTHRA.
 
 ---
 
-## 🛠️ Phases & Milestones
+## 🛠️ Development Milestones
 
-### Phase 1: Core Engine & SDK (Q1 - Q2 2026)
-*Focus: Establish the foundational infrastructure, message format, and secure file/command utilities.*
+### Milestone 0: Core Specifications & Environment Configuration (Current)
+- [x] Establish core project specifications: Constitution, Vision, Roadmap, Architecture, Agent specs, Coding Standards, and Research Philosophy.
+- [x] Set up repository skeleton and gitignore constraints.
+- [x] Define `CLAUDE.md` to establish development protocols.
 
-*   [x] **M1.1: Project Skeleton & Guidelines**
-    *   Initialize the repository with comprehensive guidelines.
-    *   Set up base documents: Constitution, Vision, Roadmap, Architecture.
-*   [ ] **M1.2: Message Bus & Protocol Specification**
-    *   Define the JSON-RPC schema for agent-to-agent and agent-to-system messages.
-    *   Build a local, ultra-fast in-memory event emitter for events.
-*   [ ] **M1.3: The Sandbox Model**
-    *   Develop the system execution limits configuration.
-    *   Provide safe interfaces for file reading, writing, and shell commands.
+### Milestone 1: Simulation Client & Execution Layer
+- [ ] Build the Simulation Client to interface with the official WorldQuant BRAIN ACE API.
+- [ ] Implement robust token-based authentication and automatic session renewal.
+- [ ] Implement rate-limiting queues and error-retry logic to handle server timeouts and busy states.
+- [ ] Write mock test suites to validate client behaviors without making network calls.
 
----
+### Milestone 2: Single-Agent Alpha Synthesis Loop
+- [ ] Implement the Code Synthesizer agent profile.
+- [ ] Build a local validation module to verify basic syntax of expressions before sending them to the ACE API.
+- [ ] Complete the interface between the Code Synthesizer and the Simulation Client.
+- [ ] Create basic logging systems to save simulation outputs locally as JSON records.
 
-### Phase 2: Agent Runtime & Collaboration (Q3 - Q4 2026)
-*Focus: Introduce coordinator-worker architectures, state tracking, and local context persistence.*
+### Milestone 3: Database Integration & Persistent Memory
+- [ ] Initialize the relational database (SQLite/PostgreSQL) to log all strategy attempts, code, and performance metrics.
+- [ ] Integrate a local vector store (ChromaDB) to manage semantic embeddings of code blocks and failure logs.
+- [ ] Implement semantic search functions to retrieve past code segments and failure profiles.
 
-*   [ ] **M2.1: Multi-Agent Orchestration Layer**
-    *   Build the `Coordinator` agent class which can spawn and manage child agents.
-    *   Establish mailbox queues for subagent messaging.
-*   [ ] **M2.2: Context & Memory Engine**
-    *   Add a local SQLite-based key-value store for session preservation.
-    *   Integrate a vector database connector (e.g., ChromaDB) for semantic codebase searches.
-*   [ ] **M2.3: Developer CLI & Interactive Terminal**
-    *   Create a sleek CLI tool (`synthra`) for initializing workspaces and invoking agents.
-    *   Implement real-time visual output of agent thoughts and tool calls.
-
----
-
-### Phase 3: Developer Ecosystem & Scaling (Q1 - Q2 2027)
-*Focus: Allow custom tool registration, web dashboards, and enterprise permissions.*
-
-*   [ ] **M3.1: Plugin & Extension System**
-    *   Define a standard API for writing third-party plugins.
-    *   Provide hooks for agents to download and register CLI tools on-the-fly.
-*   [ ] **M3.2: Synthra Dashboard (Web UI)**
-    *   Build a modern Next.js/Vite dashboard to visualize running agent trees.
-    *   Provide interactive debugging for tool calls, variables, and memory states.
-*   [ ] **M3.3: Enterprise Access Controls**
-    *   Integrate RBAC (Role-Based Access Control) for network resources.
-    *   Support secure vault configurations for API keys and secrets.
+### Milestone 4: Hypothesis Generation & closed-Loop Research
+- [ ] Implement the Hypothesis Generator agent profile.
+- [ ] Build data catalog utilities to query available WorldQuant BRAIN dataset metadata.
+- [ ] Construct the evaluation pipeline that analyzes simulation outcomes, classifies failures, and updates generation parameters.
+- [ ] Complete the closed-loop cycle: Hypothesis Generation -> Code Synthesis -> Simulation Execution -> Memory Update.
 
 ---
 
-## 📊 Status Matrix
+## 🚀 Version Releases
 
-| Milestone | Feature Group | Target Date | Status | Priority |
-| :--- | :--- | :--- | :--- | :--- |
-| **M1.1** | Project Initialization | Q3 2026 (July) | `In Progress` | 🔥 Critical |
-| **M1.2** | Message Bus & Protocol | Q3 2026 (August) | `Planned` | 🔥 Critical |
-| **M1.3** | Sandbox & Permissions | Q3 2026 (September) | `Planned` | High |
-| **M2.1** | Multi-Agent Orchestrator | Q4 2026 (October) | `Planned` | High |
-| **M2.2** | Context & Memory Engine | Q4 2026 (November) | `Planned` | Medium |
-| **M2.3** | Developer CLI | Q4 2026 (December) | `Planned` | Medium |
-| **M3.1** | Plugin & Extension SDK | Q1 2027 (January) | `Planned` | Low |
-| **M3.2** | Synthra Web UI Dashboard | Q1 2027 (March) | `Planned` | Low |
+### Version 1.0 (Production Core Release)
+*Focus: Autonomous research loop execution for a single workspace.*
+- Fully automated execution of multi-step research campaigns.
+- Complete closed-loop learning engine running 24/7.
+- Comprehensive database schema logging all activities, metrics, and failures.
+- Interactive CLI for monitoring campaigns, viewing active agent tasks, and managing API credentials.
+
+### Version 2.0 (Portfolio Integration & Optimization)
+*Focus: Advanced selection algorithms and multi-strategy diversification.*
+- Implement a local portfolio evaluation engine that calculates cross-correlation matrices across all simulated alphas.
+- Add an autonomous selection module to filter strategies based on performance, correlation, decay, and turnover constraints.
+- Integrate automated candidate submission capabilities utilizing official platform protocols.
+
+### Version 3.0 (Distributed Federated System)
+*Focus: Scale, collaboration, and federated learning.*
+- Multi-node support allowing multiple instances of SYNTHRA to coordinate on distinct campaigns.
+- Implement secure metadata exchange interfaces to share learning parameters without leaking alpha code.
+- Dynamic workload rebalancing across active nodes.
+
+---
+
+## 🔮 Long-Term Goals
+
+1.  **Multi-Asset Class Adaptability**: Extend the Hypothesis Engine to support equity, futures, and credit markets seamlessly as platform capabilities evolve.
+2.  **Autonomous Regime Detection**: Implement continuous market scanning to identify regime shifts and automatically pivot target research parameters.
+3.  **Self-Healing Code Synthesis**: Train or fine-tune local models on SYNTHRA's historical database to generate code with near-zero syntax failure rates.
+4.  **Hardware-Agnostic Execution**: Ensure the platform can deploy across cloud architectures, hybrid clusters, or localized workstations with minimal config modifications.
