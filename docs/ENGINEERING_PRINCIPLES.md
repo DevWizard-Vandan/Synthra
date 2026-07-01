@@ -54,9 +54,9 @@ This document defines the core technical and architectural tenets of SYNTHRA. Al
 - **Why**: Swallowing errors or delaying validation leads to silent failures and corrupts memory states.
 - **How**: Validate inputs immediately at module boundaries. Raise exceptions and abort execution if invalid states occur.
 
-### 12. Research Before Optimization
+### 12. Measure Before Optimizing
 - **Why**: Premature code optimization wastes development resources on non-bottleneck components.
-- **How**: Write clean, standard code first. Only optimize bottlenecks after collecting empirical latency and memory metrics.
+- **How**: Never optimize code before you can measure the bottleneck. Only optimize components after collecting empirical latency and memory metrics.
 
 ### 13. Knowledge Before Automation
 - **Why**: Automatically generating strategies without systematic tracking yields high-volume noise rather than compounded research.

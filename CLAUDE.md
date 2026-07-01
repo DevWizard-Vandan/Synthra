@@ -1,6 +1,6 @@
 # CLAUDE.md: Agent Operating Manual
 
-This document defines the behavioral, technical, and communication protocols for development agents working on SYNTHRA. It serves as a strict guideline to maintain engineering rigor and architectural consistency.
+This document defines the behavioral and communication protocols for development agents working on SYNTHRA. It serves as a strict guideline to maintain engineering rigor and architectural consistency.
 
 ---
 
@@ -17,12 +17,46 @@ When executing development tasks, architectural or design conflicts must be reso
                 ↓
      Architecture Decision Records (ADRs)
                 ↓
+         Design Documents (DESIGNs)
+                ↓
           Specifications (SPECs)
                 ↓
           Implementation
 ```
 
-If a conflict occurs between levels, higher levels always override lower levels. If a lower-level specification proposes a change that violates the Constitution or Architecture, the developer must stop and request clarification.
+If a conflict occurs between levels, higher levels always override lower levels. If a lower-level document proposes a change that violates a higher-level document, the developer must stop and request clarification.
+
+---
+
+## 📚 Document Maturity States
+Every document (Architecture, Glossary, Principles, Designs, Specs) must maintain one of the following states in its frontmatter:
+`Draft` → `Review` → `Approved` → `Frozen` → `Archived`
+
+No code implementation may begin for a specification unless its state is set to `Approved` or `Frozen`.
+
+---
+
+## 🏷️ ID Prefixing Conventions
+Every project asset, record, and document must follow these naming schemes:
+- Specifications: `SPEC-XXXX`
+- Design Papers: `DESIGN-XXXX`
+- Requests for Comments: `RFC-XXXX`
+- Architecture Decision Records: `ADR-XXXX`
+- Research Campaigns: `CMP-XXXX`
+- Hypotheses: `HYP-XXXX`
+- Experiments: `EXP-XXXX`
+- Research Assets: `AST-XXXX`
+- Knowledge Records: `KNW-XXXX`
+
+---
+
+## 🗣️ Vocabulary Rules
+To maintain consistency in our domain-driven design, you must strictly adhere to the following terminology rules:
+- Use **Research** instead of *Search*.
+- Use **Campaign** instead of *Job*.
+- Use **Experiment** instead of *Simulation*.
+- Use **Research Asset** instead of *Artifact*.
+- Use **Planner** instead of *Scheduler*.
 
 ---
 
@@ -54,24 +88,15 @@ Prompt engineering is fragile and probabilistic. Small changes in model versions
 ## 🏛️ Architectural Guardrails
 
 - **Do Not Invent Architecture**: You are a Senior Staff Software Engineer, not the Architect. You must implement the architecture defined in [ARCHITECTURE.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/ARCHITECTURE.md) and [CONSTITUTION.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/CONSTITUTION.md).
-- **ID Prefixing Conventions**: Every project asset, record, and document must follow these naming schemes:
-  - Specifications: `SPEC-XXXX`
-  - Requests for Comments: `RFC-XXXX`
-  - Architecture Decision Records: `ADR-XXXX`
-  - Research Campaigns: `CMP-XXXX`
-  - Hypotheses: `HYP-XXXX`
-  - Experiments: `EXP-XXXX`
-  - Research Assets: `AST-XXXX`
 - **ADR Protocol**: Every significant design choice (such as changing a database provider, altering the agent communication format, or introducing a new package dependency) must be recorded as an ADR in the [adr directory](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/adr/).
-- **SPEC Protocol**: Claude Code is never allowed to implement a feature unless a corresponding approved SPEC exists under `docs/specs/` (e.g., `SPEC-0001: Configuration Manager`). You must implement code based strictly on SPEC files received or approved by the user.
-  - **SPEC States**: A specification must transition through these states: `Draft` → `Architecture Review` → `Approved` → `Implementation` → `Code Review` → `Verified` → `Frozen` → `Deprecated`.
+- **SPEC Protocol**: Claude Code is never allowed to implement a feature unless a corresponding approved SPEC exists under `docs/specs/`. You must implement code based strictly on SPEC files received or approved by the user.
   - **SPEC Boundary Validation**: Every SPEC must answer the five validation questions (Why does it exist? Why is this the right boundary? Could another module own it? What happens if it disappears? Will we like it in 2 years?) before approval.
 
 ---
 
 ## 💻 Coding Guidelines
 
-- **Python Requirements**: Write standard Python (>= 3.11). Use strict type annotations for all parameters, class attributes, and return types. Use Google-style docstrings.
+- **Requirements**: Write clean, standard code conforming to the [CODING_STANDARDS.md](file:///c:/Users/VANDAN/Projects/SYNTHRA/docs/CODING_STANDARDS.md) file. Use strict type annotations for all parameters, class attributes, and return types. Use Google-style docstrings.
 - **Error Handling**: Never catch generic exceptions silently. Wrap network calls, file system tasks, and external API requests in specific try-except blocks, log the exact error payload with stack traces, and propagate the error cleanly.
 - **Testing**: Write unit tests for every new function. Run existing test suites before and after modifications. Ensure no regression in test coverage.
 

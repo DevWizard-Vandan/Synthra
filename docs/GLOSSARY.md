@@ -23,10 +23,11 @@ This document provides concise definitions for essential WorldQuant BRAIN and SY
 
 ## 🤖 SYNTHRA Architecture Concepts
 
-- **Campaign (`CMP-XXXX`)**: The primary unit of research. It serves as the bounding context/repository for all hypotheses, experiments, and learnings, restricted by specific assets, regions, and themes.
+- **Campaign (`CMP-XXXX`)**: The primary Research Program. It serves as the bounding context for all hypotheses, experiments, and learnings, restricted by specific assets, regions, and themes.
 - **Hypothesis (`HYP-XXXX`)**: A structured document defining an economic rationale explaining why a specific relationship should yield predictability.
 - **Experiment (`EXP-XXXX`)**: A single backtest execution mapping to a hypothesis, generating specific logs and performance metrics.
-- **Research Asset (`AST-XXXX`)**: A code variant, generated expression, or dataset compilation produced during a campaign.
+- **Research Asset (`AST-XXXX`)**: Any technical output produced during research (including Hypotheses, Expressions, Simulations, Visualizations, Correlation Reports, Notebooks, Parameter Sweeps, Summaries, Failure Analyses, Dataset Profiles).
+- **Knowledge Record (`KNW-XXXX`)**: A record capturing research discoveries, observations, evidence, conclusions, and confidence scores.
 - **Research Memory**: A persistence system caching historical campaign configurations, simulation logs, and performance metrics.
 - **Knowledge Graph**: A conceptual representation linking datasets, mathematical operators, economic themes, and their empirical performance.
 - **Experiment Graph**: A parent-child relational tree tracking the lineage of hypotheses, expression variations, and backtest results.
@@ -36,6 +37,7 @@ This document provides concise definitions for essential WorldQuant BRAIN and SY
 - **LLM Router**: A reasoning utility selecting the optimal model size, context limit, and cost profile for a given agent task.
 - **Department**: An organizational structure grouping related agents (e.g., Research Department, Execution Department).
 - **Agent**: A modular, single-responsibility AI actor executing tasks inside a department.
-- **ADR (`ADR-XXXX`)**: Architecture Decision Record; a document capturing a design choice, its context, and its trade-offs.
+- **ADR (`ADR-XXXX`)**: Architecture Decision Record; a document capturing an engineering choice, its context, and its trade-offs.
 - **RFC (`RFC-XXXX`)**: Request for Comments; a proposal detailing a new feature or design specification, circulated for review before writing code.
+- **Design Paper (`DESIGN-XXXX`)**: A document analyzing technical options (pros/cons) and outlining the recommended implementation path before specifications are written.
 - **Specification (`SPEC-XXXX`)**: A document detailing the precise technical requirements and interface designs for a system component.
