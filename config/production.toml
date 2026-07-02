@@ -1,0 +1,17 @@
+# SYNTHRA Production Configuration Sheet
+
+[app]
+env = "production"
+
+[runtime]
+concurrency_pool_size = 16
+thread_timeout_seconds = 60.0
+
+[logging]
+level = "WARNING"
+
+[storage]
+backend = "postgresql"
+connection_string = "postgresql://localhost/synthra_prod"
+timeout_ms = 10000
+retry_limit = 5

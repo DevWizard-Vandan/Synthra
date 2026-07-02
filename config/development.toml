@@ -1,0 +1,13 @@
+# SYNTHRA Development Configuration Sheet
+
+[app]
+env = "development"
+
+[logging]
+level = "DEBUG"
+
+[storage]
+backend = "sqlite"
+connection_string = "sqlite:///synthra_dev.db"
+timeout_ms = 3000
+retry_limit = 2

@@ -1,0 +1,40 @@
+# SYNTHRA Base Configuration Sheet
+
+[app]
+name = "Synthra"
+env = "development"
+version = 1
+
+[runtime]
+concurrency_pool_size = 4
+thread_timeout_seconds = 30.0
+
+[logging]
+level = "INFO"
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+[storage]
+backend = "memory"
+connection_string = ":memory:"
+timeout_ms = 5000
+retry_limit = 3
+
+[llm]
+# LLM Providers configured hierarchically or via local configs
+[llm.providers.openai]
+model = "gpt-4o"
+enabled = true
+timeout_seconds = 60
+max_tokens = 4096
+api_base = "https://api.openai.com/v1"
+
+[llm.providers.openai.secrets]
+api_key = "" # To be overridden via environment variables or local.toml
+
+[paths]
+data_dir = "data"
+output_dir = "output"
+
+[monitoring]
+pulse_interval_seconds = 10
+metrics_enabled = true

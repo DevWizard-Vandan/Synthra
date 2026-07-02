@@ -1,0 +1,12 @@
+# Copy this file to local.toml to apply developer machine overrides.
+# local.toml is Git-ignored to prevent credential leaks.
+
+[app]
+env = "local"
+
+[llm.providers.openai]
+model = "gpt-4o"
+enabled = true
+
+[llm.providers.openai.secrets]
+api_key = "local-development-api-key-placeholder"
