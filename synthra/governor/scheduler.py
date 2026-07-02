@@ -12,6 +12,7 @@ from synthra.governor.queue import CampaignQueue
 from synthra.governor.state import CampaignState, validate_transition
 from synthra.governor.tracker import CampaignProgressTracker
 from synthra.governor.worker import CampaignWorker
+from synthra.governor.submission import SubmissionQueue
 from synthra.memory import CampaignRepository, DatabaseManager
 from synthra.research.orchestrator import ResearchOrchestrator
 
@@ -41,6 +42,7 @@ class CampaignScheduler:
         self.num_workers = num_workers
         self.max_retries = max_retries
         self.initial_backoff = initial_backoff_seconds
+        self.submission_queue = SubmissionQueue(db_manager)
 
         self._workers: List[CampaignWorker] = []
         self._lock = Lock()
@@ -64,6 +66,15 @@ class CampaignScheduler:
                     FOREIGN KEY(campaign_id) REFERENCES campaigns(id)
                 );
             """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS campaign_checkpoints (
+                    campaign_id TEXT PRIMARY KEY,
+                    task_index INTEGER NOT NULL,
+                    generation INTEGER NOT NULL,
+                    checkpoint_data TEXT NOT NULL,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
 
     def start(self) -> None:
         """Start worker threads and retry monitor thread."""
@@ -83,6 +94,7 @@ class CampaignScheduler:
                     event_bus=self.event_bus,
                     update_state_cb=self.update_campaign_state,
                     get_state_cb=self.get_campaign_state,
+                    submission_queue=self.submission_queue,
                 )
                 worker.start()
                 self._workers.append(worker)

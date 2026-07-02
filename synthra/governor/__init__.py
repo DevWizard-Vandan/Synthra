@@ -15,6 +15,12 @@ from synthra.governor.events import (
     SimulationCompleted,
     SimulationFailed,
     SimulationStarted,
+    ExpressionGenerated,
+    CandidateQueued,
+    MutationCreated,
+    LearningUpdated,
+    CampaignCheckpointed,
+    CampaignRecovered,
 )
 from synthra.governor.exceptions import (
     CampaignNotFoundError,
@@ -27,6 +33,7 @@ from synthra.governor.scheduler import CampaignScheduler
 from synthra.governor.state import CampaignState, validate_transition
 from synthra.governor.tracker import CampaignProgress, CampaignProgressTracker
 from synthra.governor.worker import CampaignWorker
+from synthra.governor.submission import SubmissionQueue, QueuedCandidate
 
 __all__ = [
     "Governor",
@@ -54,4 +61,12 @@ __all__ = [
     "CandidateApproved",
     "CandidateRejected",
     "LearningRecorded",
+    "ExpressionGenerated",
+    "CandidateQueued",
+    "MutationCreated",
+    "LearningUpdated",
+    "CampaignCheckpointed",
+    "CampaignRecovered",
+    "SubmissionQueue",
+    "QueuedCandidate",
 ]

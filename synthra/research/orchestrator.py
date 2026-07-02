@@ -17,12 +17,14 @@ from synthra.learning.history import HistoryTracker
 from synthra.learning.repository import LearningRepository
 from synthra.learning.scorer import ExpressionScorer
 from synthra.learning.selector import HypothesisSelector
+from synthra.memory import DatabaseManager
 from synthra.research.generator import ExpressionGenerator
 from synthra.research.hypothesis import HypothesisGenerator
 from synthra.research.mutator import MutationEngine
 from synthra.research.planner import Planner
 from synthra.research.ranking import CandidateRanker
 from synthra.research.validator import Validator
+from synthra.research.evolution import SelectionEngine
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,8 @@ class ResearchOrchestrator:
         history_tracker: Optional[HistoryTracker] = None,
         selector: Optional[HypothesisSelector] = None,
         scorer: Optional[ExpressionScorer] = None,
+        db_manager: Optional[DatabaseManager] = None,
+        selection_engine: Optional[SelectionEngine] = None,
     ) -> None:
         """Initialize orchestrator with all pipeline and learning subsystems."""
         self.planner = planner
@@ -53,6 +57,8 @@ class ResearchOrchestrator:
         self.mutation_engine = mutation_engine
         self.simulation_runner = simulation_runner
         self.ranker = ranker
+        self.db_manager = db_manager
+        self.selection_engine = selection_engine or SelectionEngine()
 
         # Learning Engine dependencies
         self.feedback_generator = feedback_generator

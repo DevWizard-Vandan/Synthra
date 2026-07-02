@@ -91,6 +91,9 @@ class Campaign(BaseDomainModel):
     status: CampaignStatus = Field(default=CampaignStatus.DRAFT)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     concluded_at: Optional[datetime] = Field(default=None)
+    max_simulations: int = Field(default=100, ge=1)
+    max_runtime_seconds: int = Field(default=3600, ge=1)
+    target_alpha_count: int = Field(default=5, ge=1)
 
     @field_validator("id")
     @classmethod

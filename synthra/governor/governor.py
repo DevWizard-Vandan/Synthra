@@ -41,6 +41,7 @@ class Governor:
             max_retries=max_retries,
             initial_backoff_seconds=initial_backoff_seconds,
         )
+        self.submission_queue = self.scheduler.submission_queue
 
     def start(self) -> None:
         """Start scheduler workers and recover interrupted campaigns."""

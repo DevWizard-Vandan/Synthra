@@ -1,7 +1,7 @@
 """Event models and event bus for broadcasting scheduler and campaign actions."""
 
 from datetime import datetime
-from typing import Callable, List
+from typing import Any, Callable, Dict, List
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -98,6 +98,47 @@ class LearningRecorded(CampaignEvent):
     expression: str
     success: bool
     sharpe: float
+
+
+class ExpressionGenerated(CampaignEvent):
+    """Broadcasted when a new expression is generated."""
+
+    expression: str
+
+
+class CandidateQueued(CampaignEvent):
+    """Broadcasted when a candidate is enqueued in the submission queue."""
+
+    candidate_id: str
+    expression: str
+
+
+class MutationCreated(CampaignEvent):
+    """Broadcasted when a mutation variant is created."""
+
+    expression: str
+    mutation_type: str
+
+
+class LearningUpdated(CampaignEvent):
+    """Broadcasted when the learning model receives updated metrics."""
+
+    expression: str
+    metrics: Dict[str, Any]
+
+
+class CampaignCheckpointed(CampaignEvent):
+    """Broadcasted when a campaign progress checkpoint is saved."""
+
+    task_index: int
+    generation: int
+
+
+class CampaignRecovered(CampaignEvent):
+    """Broadcasted when a campaign is successfully recovered from a checkpoint."""
+
+    task_index: int
+    generation: int
 
 
 class CampaignEventBus:
