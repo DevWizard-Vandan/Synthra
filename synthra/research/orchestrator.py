@@ -1,14 +1,22 @@
 """Orchestrator subsystem executing the complete autonomous research loop."""
 
 import logging
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
 from synthra.core.domain import (
     AlphaCandidate,
     Campaign,
+    Experiment,
+    ExperimentStatus,
     Hypothesis,
 )
 from synthra.execution.runner import SimulationRunner
+from synthra.learning.feedback import FeedbackGenerator, LearningRecord
+from synthra.learning.history import HistoryTracker
+from synthra.learning.repository import LearningRepository
+from synthra.learning.scorer import ExpressionScorer
+from synthra.learning.selector import HypothesisSelector
 from synthra.research.generator import ExpressionGenerator
 from synthra.research.hypothesis import HypothesisGenerator
 from synthra.research.mutator import MutationEngine
@@ -31,8 +39,13 @@ class ResearchOrchestrator:
         mutation_engine: MutationEngine,
         simulation_runner: SimulationRunner,
         ranker: CandidateRanker,
+        feedback_generator: Optional[FeedbackGenerator] = None,
+        learning_repository: Optional[LearningRepository] = None,
+        history_tracker: Optional[HistoryTracker] = None,
+        selector: Optional[HypothesisSelector] = None,
+        scorer: Optional[ExpressionScorer] = None,
     ) -> None:
-        """Initialize orchestrator with all pipeline step subsystems."""
+        """Initialize orchestrator with all pipeline and learning subsystems."""
         self.planner = planner
         self.hypothesis_generator = hypothesis_generator
         self.expression_generator = expression_generator
@@ -41,15 +54,26 @@ class ResearchOrchestrator:
         self.simulation_runner = simulation_runner
         self.ranker = ranker
 
+        # Learning Engine dependencies
+        self.feedback_generator = feedback_generator
+        self.learning_repository = learning_repository
+        self.history_tracker = history_tracker
+        self.selector = selector or HypothesisSelector()
+        self.scorer = scorer
+
     def execute_campaign(
         self, campaign: Campaign, max_hypotheses_per_task: int = 1
     ) -> List[AlphaCandidate]:
         """Run the complete research loop for a Campaign.
 
         Planner -> Hypothesis -> Expressions -> Validation -> Simulation ->
-        Mutation -> Simulation -> Ranking -> Candidate List.
+        Mutation -> Simulation -> Learning Feedback -> Ranking -> Candidate List.
         """
         logger.info("Starting execution for campaign %s", campaign.id)
+
+        # Record campaign in history
+        if self.history_tracker:
+            self.history_tracker.record_campaign(campaign)
 
         # 1. Decompose campaign into tasks
         tasks = self.planner.plan_campaign(campaign)
@@ -73,6 +97,12 @@ class ResearchOrchestrator:
                 hypotheses.append(hyp)
                 hyp_counter += 1
 
+                # Record hypothesis in history
+                if self.history_tracker:
+                    self.history_tracker.record_hypothesis(hyp)
+
+                hypothesis_records: List[LearningRecord] = []
+
                 # 3. Generate candidate expressions for each assigned dataset
                 for dataset_name in hyp.datasets:
                     requests = (
@@ -91,10 +121,47 @@ class ResearchOrchestrator:
                             logger.info(
                                 "Simulating base expression: %s", req.expression
                             )
-                            result = self.simulation_runner.run(req)
 
+                            # Record pending base experiment
                             exp_id = f"EXP-{exp_counter:04d}"
                             exp_counter += 1
+                            base_exp = Experiment(
+                                id=exp_id,
+                                campaign_id=campaign.id,
+                                hypothesis_id=hyp.id,
+                                expression=req.expression,
+                                request=req,
+                                status=ExperimentStatus.PENDING,
+                                created_at=datetime.utcnow(),
+                            )
+                            if self.history_tracker:
+                                self.history_tracker.record_experiment(base_exp)
+
+                            result = self.simulation_runner.run(req)
+
+                            # Update base experiment to completed
+                            completed_base_exp = base_exp.model_copy(
+                                update={
+                                    "status": ExperimentStatus.COMPLETED,
+                                    "result": result,
+                                    "finished_at": datetime.utcnow(),
+                                }
+                            )
+                            if self.history_tracker:
+                                self.history_tracker.record_experiment(
+                                    completed_base_exp
+                                )
+
+                            # Save learning record feedback
+                            if self.feedback_generator and self.learning_repository:
+                                rec = self.feedback_generator.generate_record(
+                                    req,
+                                    result,
+                                    datasets=[dataset_name],
+                                    operators=hyp.operators,
+                                )
+                                self.learning_repository.add_record(rec)
+                                hypothesis_records.append(rec)
 
                             cand_id = f"AST-{cand_counter:04d}"
                             candidate = AlphaCandidate(
@@ -109,11 +176,26 @@ class ResearchOrchestrator:
                             all_candidates.append(candidate)
                             cand_counter += 1
 
-                            # 5. Mutate to generate improved variants
+                            # 5. Evaluate if we should proceed with mutations
+                            decision = self.selector.evaluate_hypothesis(
+                                hypothesis_records
+                            )
+                            if decision == "retire":
+                                logger.info(
+                                    "Hypothesis %s retired early based on performance.",
+                                    hyp.id,
+                                )
+                                continue
+
+                            # Mutate to generate improved variants
                             mutated_reqs = self.mutation_engine.mutate_request(
                                 req, result, dataset_name
                             )
-                            for mut_req in mutated_reqs[:2]:  # Limit to top 2 mutations
+
+                            # Limit mutation count based on evaluation decision
+                            mutation_limit = 2 if decision == "mutate" else 1
+
+                            for mut_req in mutated_reqs[:mutation_limit]:
                                 # Validate mutated request
                                 if self.validator.validate_request(
                                     mut_req, dataset_name
@@ -123,10 +205,54 @@ class ResearchOrchestrator:
                                             "Simulating mutated expression: %s",
                                             mut_req.expression,
                                         )
-                                        mut_result = self.simulation_runner.run(mut_req)
 
+                                        # Record pending mutated experiment
                                         mut_exp_id = f"EXP-{exp_counter:04d}"
                                         exp_counter += 1
+                                        mut_exp = Experiment(
+                                            id=mut_exp_id,
+                                            campaign_id=campaign.id,
+                                            hypothesis_id=hyp.id,
+                                            expression=mut_req.expression,
+                                            request=mut_req,
+                                            status=ExperimentStatus.PENDING,
+                                            created_at=datetime.utcnow(),
+                                        )
+                                        if self.history_tracker:
+                                            self.history_tracker.record_experiment(
+                                                mut_exp
+                                            )
+
+                                        mut_result = self.simulation_runner.run(mut_req)
+
+                                        # Update mutated experiment to completed
+                                        completed_mut_exp = mut_exp.model_copy(
+                                            update={
+                                                "status": ExperimentStatus.COMPLETED,
+                                                "result": mut_result,
+                                                "finished_at": datetime.utcnow(),
+                                            }
+                                        )
+                                        if self.history_tracker:
+                                            self.history_tracker.record_experiment(
+                                                completed_mut_exp
+                                            )
+
+                                        # Save learning record feedback
+                                        if (
+                                            self.feedback_generator
+                                            and self.learning_repository
+                                        ):
+                                            mut_rec = (
+                                                self.feedback_generator.generate_record(
+                                                    mut_req,
+                                                    mut_result,
+                                                    datasets=[dataset_name],
+                                                    operators=hyp.operators,
+                                                )
+                                            )
+                                            self.learning_repository.add_record(mut_rec)
+                                            hypothesis_records.append(mut_rec)
 
                                         mut_cand_id = f"AST-{cand_counter:04d}"
                                         mut_candidate = AlphaCandidate(
@@ -149,6 +275,18 @@ class ResearchOrchestrator:
                         except Exception as e:
                             logger.error("Simulation of base expression failed: %s", e)
 
-        # 6. Rank all successfully simulated candidates
-        ranked_scored = self.ranker.rank_candidates(all_candidates)
-        return [candidate for candidate, _ in ranked_scored]
+        # 6. Score and rank all successfully simulated candidates
+        if self.scorer:
+            # Score each candidate using the Expected Future Value Scorer
+            scored_candidates = []
+            for cand in all_candidates:
+                score = self.scorer.score_expression(cand.expression, cand.result)
+                scored_candidates.append((cand, score))
+
+            # Sort descending by EFV score
+            sorted_scored = sorted(scored_candidates, key=lambda x: x[1], reverse=True)
+            return [candidate for candidate, _ in sorted_scored]
+        else:
+            # Standard metrics ranking fallback
+            ranked_scored = self.ranker.rank_candidates(all_candidates)
+            return [candidate for candidate, _ in ranked_scored]
