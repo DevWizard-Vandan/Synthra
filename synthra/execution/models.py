@@ -37,3 +37,12 @@ class SimulationHandle(BaseExecutionModel):
     id: str = Field(..., min_length=1)
     status: str = Field(default="submitted", min_length=1)
     location: str = Field(..., min_length=1)
+
+
+class SimulationRunnerConfig(BaseExecutionModel):
+    """Polling and timeout controls for simulation execution."""
+
+    polling_interval_seconds: float = Field(default=2.0, gt=0.0)
+    timeout_seconds: float = Field(default=300.0, gt=0.0)
+    backoff_multiplier: float = Field(default=1.5, ge=1.0)
+    max_polling_interval_seconds: float = Field(default=30.0, gt=0.0)
