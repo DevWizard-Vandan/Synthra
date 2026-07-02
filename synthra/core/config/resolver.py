@@ -48,7 +48,7 @@ class ConfigurationResolver:
         return val
 
     @staticmethod
-    def _set_nested_value(d: dict, parts: List[str], value: Any) -> bool:
+    def _set_nested_value(d: Dict[str, Any], parts: List[str], value: Any) -> bool:
         """Walks down the dictionary using path parts and sets the value.
 
         Handles both static keys with underscores and dynamic keys.

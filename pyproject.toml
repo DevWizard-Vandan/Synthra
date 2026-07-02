@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "synthra"
+version = "0.1.0"
+description = "Autonomous quantitative research operating system."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "flake8",
+    "mypy",
+    "pytest",
+]
+
+[tool.setuptools.packages.find]
+include = ["synthra*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [".git", ".pytest_cache", "__pycache__"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["synthra"]
+strict = true
+warn_unused_configs = true
+show_error_codes = true

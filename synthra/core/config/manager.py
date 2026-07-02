@@ -28,7 +28,7 @@ class ConfigurationManager:
     def _exclude_secrets(data: Any) -> Any:
         """Recursively walks a primitive structure and redacts key secrets."""
         if isinstance(data, dict):
-            cleaned = {}
+            cleaned: Dict[str, Any] = {}
             for k, v in data.items():
                 if k == "api_key":
                     cleaned[k] = ""

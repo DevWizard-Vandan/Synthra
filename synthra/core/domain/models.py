@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class CampaignStatus(str, Enum):
     """Execution status of a research campaign."""
+
     DRAFT = "draft"
     ACTIVE = "active"
     CONCLUDED = "concluded"
@@ -21,6 +22,7 @@ class CampaignStatus(str, Enum):
 
 class HypothesisStatus(str, Enum):
     """Validation status of a research hypothesis."""
+
     DRAFT = "draft"
     TESTED = "tested"
     ARCHIVED = "archived"
@@ -28,6 +30,7 @@ class HypothesisStatus(str, Enum):
 
 class ExperimentStatus(str, Enum):
     """Orchestration status of an experiment simulation."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -36,6 +39,7 @@ class ExperimentStatus(str, Enum):
 
 class Region(str, Enum):
     """Trading regions supported by the backtesting platform."""
+
     US = "US"
     EU = "EU"
     AP = "AP"
@@ -44,6 +48,7 @@ class Region(str, Enum):
 
 class Universe(str, Enum):
     """Trading universes supported by the backtesting platform."""
+
     TOP3000 = "TOP3000"
     TOP2000 = "TOP2000"
     TOP1000 = "TOP1000"
@@ -52,6 +57,7 @@ class Universe(str, Enum):
 
 class ResearchAssetType(str, Enum):
     """Categories of assets generated during research execution."""
+
     NOTEBOOK = "notebook"
     REPORT = "report"
     PLOT = "plot"
