@@ -1,6 +1,7 @@
 """Unit test suite for SYNTHRA Configuration Manager (SPEC-0001)."""
 
 import os
+import time
 import pytest
 from pathlib import Path
 from pydantic import ValidationError
@@ -41,7 +42,7 @@ def get_valid_base_toml() -> str:
 [app]
 name = "Synthra"
 env = "development"
-version = 1
+schema_version = 1
 
 [runtime]
 concurrency_pool_size = 4
@@ -133,7 +134,7 @@ def test_tc004_missing_or_empty_secrets(tmp_path):
     base_toml = """
 [app]
 env = "development"
-version = 1
+schema_version = 1
 
 [runtime]
 concurrency_pool_size = 4
@@ -186,7 +187,9 @@ metrics_enabled = true
 def test_tc005_unsupported_version(tmp_path):
     base_toml = get_valid_base_toml()
     # Replace version with 99
-    invalid_version_toml = base_toml.replace("version = 1", "version = 99")
+    invalid_version_toml = base_toml.replace(
+        "schema_version = 1", "schema_version = 99"
+    )
     base_file = write_toml(tmp_path / "base.toml", invalid_version_toml)
 
     with pytest.raises(UnsupportedConfigurationVersion) as exc_info:
@@ -211,7 +214,7 @@ def test_tc006_flawless_bootstrap(tmp_path):
     assert ConfigurationManager.summary is not None
     summary = ConfigurationManager.summary
     assert summary.environment == "development"
-    assert summary.version == 1
+    assert summary.schema_version == 1
     assert "base.toml" in summary.loaded_files[0]
     assert summary.storage_backend == "memory"
     assert "openai" in summary.providers_loaded
@@ -239,3 +242,47 @@ def test_tc008_serialization_masking(tmp_path):
     # Assert secret is masked
     assert "default-key" not in json_str
     assert "**********" in json_str
+
+
+# TC-009: Malformed TOML syntax verification.
+def test_tc009_malformed_toml(tmp_path):
+    base_file = write_toml(tmp_path / "base.toml", "[app\nname = ")
+    with pytest.raises(ConfigurationValidationError) as exc_info:
+        ConfigurationManager.bootstrap_configuration([base_file], {})
+    assert "Failed to parse TOML" in str(exc_info.value)
+
+
+# TC-010: Environment override precedence over TOML values.
+def test_tc010_env_precedence(tmp_path):
+    base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
+
+    # Set override env variables
+    os.environ["SYNTHRA_RUNTIME_CONCURRENCY_POOL_SIZE"] = "16"
+    os.environ["SYNTHRA_APP_ENV"] = "production"
+
+    config = ConfigurationManager.bootstrap_configuration([base_file], {})
+    assert config.runtime.concurrency_pool_size == 16
+    assert config.app.env == "production"
+
+
+# TC-011: Verify Loaded At timestamp presence and properties.
+def test_tc011_loaded_at_timestamp(tmp_path):
+    base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
+
+    # Bootstrap first time
+    ConfigurationManager.bootstrap_configuration([base_file], {})
+    summary1 = ConfigurationManager.summary
+    assert summary1 is not None
+    assert summary1.loaded_at.endswith("Z")
+
+    # Small delay
+    time.sleep(1.0)
+
+    # Bootstrap second time
+    ConfigurationManager.bootstrap_configuration([base_file], {})
+    summary2 = ConfigurationManager.summary
+    assert summary2 is not None
+
+    # Verify loaded_at changed but configuration_hash remained identical
+    assert summary1.loaded_at != summary2.loaded_at
+    assert summary1.configuration_hash == summary2.configuration_hash

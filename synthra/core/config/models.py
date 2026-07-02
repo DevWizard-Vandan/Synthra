@@ -4,6 +4,12 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from typing import Dict, List, Literal, Optional
 
+# Type Aliases for validation domains
+EnvironmentName = Literal["development", "production", "local"]
+LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+StorageBackend = Literal["sqlite", "postgresql", "memory"]
+ProviderRegistry = Dict[str, "LLMProviderConfig"]
+
 
 class BaseConfigModel(BaseModel):
     """Base model enforcing post-validation immutability and strict schemas."""
@@ -20,8 +26,8 @@ class ApplicationSubConfig(BaseConfigModel):
     """General application attributes and version info."""
 
     name: str = Field(default="Synthra")
-    env: Literal["development", "production", "local"]
-    version: int = Field(default=1)
+    env: EnvironmentName
+    schema_version: int = Field(default=1)
 
 
 class RuntimeConfig(BaseConfigModel):
@@ -34,14 +40,14 @@ class RuntimeConfig(BaseConfigModel):
 class LoggingConfig(BaseConfigModel):
     """Telemetry logging levels and format layouts."""
 
-    level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    level: LogLevel
     format: str = Field(default="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 
 class StorageConfig(BaseConfigModel):
     """Persistence parameters for local state caching."""
 
-    backend: str  # e.g., "sqlite", "postgresql", "memory"
+    backend: StorageBackend
     connection_string: str
     timeout_ms: int = Field(default=5000, ge=0)
     retry_limit: int = Field(default=3, ge=0)
@@ -67,7 +73,7 @@ class LLMProviderConfig(BaseConfigModel):
 class LLMConfig(BaseConfigModel):
     """Dynamic mapping configuration for multi-provider support."""
 
-    providers: Dict[str, LLMProviderConfig]
+    providers: ProviderRegistry
 
 
 class PathConfig(BaseConfigModel):
@@ -105,9 +111,10 @@ class ApplicationConfig(BaseConfigModel):
 class ConfigurationSummary(BaseConfigModel):
     """Clean representation of system settings summary metadata."""
 
-    environment: Literal["development", "production", "local"]
-    version: int
+    environment: EnvironmentName
+    schema_version: int
     loaded_files: List[str]
-    storage_backend: str
+    storage_backend: StorageBackend
     providers_loaded: List[str]
     configuration_hash: str
+    loaded_at: str  # ISO 8601 UTC timestamp of bootstrap trigger

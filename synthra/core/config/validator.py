@@ -34,16 +34,16 @@ class ConfigurationValidator:
                 "Missing or invalid 'app' configuration section."
             )
 
-        version = app_data.get("version")
-        if version is None:
+        schema_version = app_data.get("schema_version")
+        if schema_version is None:
             raise UnsupportedConfigurationVersion(
                 "Top-level config version is missing."
             )
 
-        # Support only version = 1 currently
-        if version != 1:
+        # Support only schema_version = 1 currently
+        if schema_version != 1:
             raise UnsupportedConfigurationVersion(
-                f"Unsupported configuration version: {version}. Expected: 1."
+                f"Unsupported configuration version: {schema_version}. Expected: 1."
             )
 
         try:

@@ -107,7 +107,7 @@ class BaseConfigModel(BaseModel):
 class ApplicationSubConfig(BaseConfigModel):
     name: str = Field(default="Synthra")
     env: Literal["development", "production", "local"]
-    version: int = Field(default=1)
+    schema_version: int = Field(default=1)
 
 class RuntimeConfig(BaseConfigModel):
     concurrency_pool_size: int = Field(gt=0, le=64)
@@ -324,7 +324,7 @@ The output dictionary summary compiled during the `ConfigurationReady` execution
 ```python
 class ConfigurationSummary(BaseConfigModel):
     environment: Literal["development", "production", "local"]
-    version: int
+    schema_version: int
     loaded_files: List[str]
     storage_backend: str
     providers_loaded: List[str]      # Derived list extracted out from dynamic provider keys
@@ -332,6 +332,7 @@ class ConfigurationSummary(BaseConfigModel):
                                      # serialized JSON representation of the final raw_data dictionary, 
                                      # but EXCLUDING all sensitive Pydantic SecretStr field values,
                                      # ensuring full structural tracking without secret leakage.
+    loaded_at: str                   # ISO 8601 UTC timestamp of bootstrap trigger
 ```
 
 ---
@@ -348,6 +349,9 @@ class ConfigurationSummary(BaseConfigModel):
 | **TC-006** | Flawless structural inputs and configuration files sheet. | Return fully frozen typed instance of `ApplicationConfig`. |
 | **TC-007** | Post-instantiation code write mutation request execution. | Property write-operation blocked; Throw `ValidationError`/`PydanticError`. |
 | **TC-008** | Serialization lookup verification pass. | Validate that calling `.model_dump_json()` replaces `SecretStr` entries with `""` or `**********`. |
+| **TC-009** | Malformed TOML syntax verification. | Ingestion Halt; Raise `ConfigurationValidationError`. |
+| **TC-010** | Environment override precedence over TOML values. | Return ApplicationConfig with environment values overriding TOML keys. |
+| **TC-011** | Loaded At timestamp presence and properties. | Verify loaded_at ends with 'Z' and dynamic time changes do not alter configuration_hash. |
 
 ---
 
@@ -355,11 +359,11 @@ class ConfigurationSummary(BaseConfigModel):
 
 Claude Code **SHALL NOT** sign off on this technical contract block until every target milestone below passes:
 
-* [ ] **Public API Stability**: Complete a formal structural review of all public function names and signatures; ensure signatures are bulletproof against immediate future alterations.
-* [ ] **Structural Isolation**: Create exactly 8 functional, single-purpose Python modules matching the designated file system topology layout.
-* [ ] **Type Correctness**: Enforce strict `mypy` typing checks; zero errors across the entire module layer.
-* [ ] **Zero Execution Noise**: `pytest` execution passes green across all test boundaries (**TC-001** through **TC-008**), with **0 active code warnings**.
-* [ ] **Clean Code Metrics**: No `TODO`, `FIXME`, or structural hacking markers inside production comments.
-* [ ] **Configuration Samples Provided**:
+* [x] **Public API Stability**: Complete a formal structural review of all public function names and signatures; ensure signatures are bulletproof against immediate future alterations.
+* [x] **Structural Isolation**: Create exactly 8 functional, single-purpose Python modules matching the designated file system topology layout.
+* [x] **Type Correctness**: Enforce strict `mypy` typing checks; zero errors across the entire module layer.
+* [x] **Zero Execution Noise**: `pytest` execution passes green across all test boundaries (**TC-001** through **TC-011**), with **0 active code warnings**.
+* [x] **Clean Code Metrics**: No `TODO`, `FIXME`, or structural hacking markers inside production comments.
+* [x] **Configuration Samples Provided**:
   * `config/base.toml` defining base specifications for all Child domain config definitions.
   - `config/development.toml`, `config/production.toml`, and git-ignored templates for `config/local.toml` and `.env`.

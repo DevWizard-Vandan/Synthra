@@ -3,7 +3,7 @@
 [app]
 name = "Synthra"
 env = "development"
-version = 1
+schema_version = 1
 
 [runtime]
 concurrency_pool_size = 4

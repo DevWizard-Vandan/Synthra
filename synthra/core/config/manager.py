@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from synthra.core.config.exceptions import (
@@ -134,11 +135,12 @@ class ConfigurationManager:
         config_hash = cls._calculate_hash(merged_data)
         summary_instance = ConfigurationSummary(
             environment=config_instance.app.env,
-            version=config_instance.app.version,
+            schema_version=config_instance.app.schema_version,
             loaded_files=[str(f) for f in ordered_source_files],
             storage_backend=config_instance.storage.backend,
             providers_loaded=list(config_instance.llm.providers.keys()),
             configuration_hash=config_hash,
+            loaded_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
 
         # Cache class properties
