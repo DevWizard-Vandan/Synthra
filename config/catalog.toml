@@ -1,0 +1,263 @@
+# SYNTHRA Dataset & Operator Catalog Metadata Configuration
+schema_version = 1
+
+[[datasets]]
+name = "pv"
+description = "Standard daily price-volume market data"
+category = "market_data"
+regions = ["US", "EU", "AP", "GLB"]
+universes = ["TOP3000", "TOP2000", "TOP1000", "TOP500"]
+aliases = ["market_data", "market", "price_volume"]
+
+[[datasets.fields]]
+name = "open"
+description = "Opening price"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = false
+aliases = ["o", "open_price"]
+
+[[datasets.fields]]
+name = "close"
+description = "Closing price"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = false
+aliases = ["c", "close_price"]
+
+[[datasets.fields]]
+name = "high"
+description = "Highest daily price"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = false
+aliases = ["h", "high_price"]
+
+[[datasets.fields]]
+name = "low"
+description = "Lowest daily price"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = false
+aliases = ["l", "low_price"]
+
+[[datasets.fields]]
+name = "volume"
+description = "Total traded volume"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = false
+aliases = ["v", "vol"]
+
+[[datasets.fields]]
+name = "vwap"
+description = "Volume-weighted average price"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = false
+aliases = ["vw"]
+
+[[datasets.fields]]
+name = "returns"
+description = "Daily asset returns"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = false
+aliases = ["ret", "daily_ret"]
+
+
+[[datasets]]
+name = "fundamental"
+description = "Corporate fundamental accounting metrics"
+category = "fundamentals"
+regions = ["US", "EU"]
+universes = ["TOP2000", "TOP1000", "TOP500"]
+aliases = ["fundamentals", "accounting", "balance_sheet"]
+
+[[datasets.fields]]
+name = "assets"
+description = "Total corporate assets"
+data_type = "float"
+frequency = "quarterly"
+delay = 2
+nullable = false
+aliases = ["total_assets"]
+
+[[datasets.fields]]
+name = "liabilities"
+description = "Total liabilities"
+data_type = "float"
+frequency = "quarterly"
+delay = 2
+nullable = false
+aliases = ["total_liabilities"]
+
+[[datasets.fields]]
+name = "book_value"
+description = "Total book value of equity"
+data_type = "float"
+frequency = "quarterly"
+delay = 2
+nullable = false
+aliases = ["bv", "equity"]
+
+[[datasets.fields]]
+name = "ebitda"
+description = "Earnings before interest, taxes, depreciation, and amortization"
+data_type = "float"
+frequency = "quarterly"
+delay = 2
+nullable = false
+aliases = ["operating_income"]
+
+[[datasets.fields]]
+name = "net_income"
+description = "Net income"
+data_type = "float"
+frequency = "quarterly"
+delay = 2
+nullable = false
+aliases = ["ni", "earnings"]
+
+
+[[datasets]]
+name = "analyst"
+description = "Analyst consensus estimates and recommendations"
+category = "analyst_estimates"
+regions = ["US"]
+universes = ["TOP2000", "TOP1000", "TOP500"]
+aliases = ["analyst_estimates", "consensus", "estimize"]
+
+[[datasets.fields]]
+name = "eps_est"
+description = "Consensus earnings per share estimate"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = true
+aliases = ["eps_consensus"]
+
+[[datasets.fields]]
+name = "rev_est"
+description = "Consensus revenue estimate"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = true
+aliases = ["revenue_consensus"]
+
+[[datasets.fields]]
+name = "recommendation"
+description = "Average recommendation rating score"
+data_type = "float"
+frequency = "daily"
+delay = 1
+nullable = true
+aliases = ["rec", "analyst_rating"]
+
+
+[[operators]]
+name = "ts_mean"
+description = "Moving average of x for the past d days"
+category = "time_series"
+signature = "ts_mean(x, d)"
+min_args = 2
+max_args = 2
+argument_types = ["float", "int"]
+return_type = "float"
+aliases = ["mean", "avg", "ts_avg"]
+
+[[operators]]
+name = "ts_sum"
+description = "Moving sum of x for the the past d days"
+category = "time_series"
+signature = "ts_sum(x, d)"
+min_args = 2
+max_args = 2
+argument_types = ["float", "int"]
+return_type = "float"
+aliases = ["sum", "ts_total"]
+
+[[operators]]
+name = "rank"
+description = "Cross-sectional percentile rank of x"
+category = "cross_sectional"
+signature = "rank(x)"
+min_args = 1
+max_args = 1
+argument_types = ["float"]
+return_type = "float"
+aliases = ["percentile_rank", "cs_rank"]
+
+[[operators]]
+name = "delay"
+description = "Value of x delayed by d days"
+category = "time_series"
+signature = "delay(x, d)"
+min_args = 2
+max_args = 2
+argument_types = ["float", "int"]
+return_type = "float"
+aliases = ["lag", "shift"]
+
+[[operators]]
+name = "ts_rank"
+description = "Percentile rank of x for the past d days"
+category = "time_series"
+signature = "ts_rank(x, d)"
+min_args = 2
+max_args = 2
+argument_types = ["float", "int"]
+return_type = "float"
+aliases = ["ts_percentile"]
+
+[[operators]]
+name = "ts_std_dev"
+description = "Moving standard deviation of x for the past d days"
+category = "time_series"
+signature = "ts_std_dev(x, d)"
+min_args = 2
+max_args = 2
+argument_types = ["float", "int"]
+return_type = "float"
+aliases = ["std", "ts_std"]
+
+[[operators]]
+name = "ts_max"
+description = "Moving maximum of x for the past d days"
+category = "time_series"
+signature = "ts_max(x, d)"
+min_args = 2
+max_args = 2
+argument_types = ["float", "int"]
+return_type = "float"
+aliases = ["max", "ts_highest"]
+
+[[operators]]
+name = "ts_min"
+description = "Moving minimum of x for the past d days"
+category = "time_series"
+signature = "ts_min(x, d)"
+min_args = 2
+max_args = 2
+argument_types = ["float", "int"]
+return_type = "float"
+aliases = ["min", "ts_lowest"]
+
+[[operators]]
+name = "ts_delta"
+description = "Difference between current x and x from d days ago"
+category = "time_series"
+signature = "ts_delta(x, d)"
+min_args = 2
+max_args = 2
+argument_types = ["float", "int"]
+return_type = "float"
+aliases = ["delta", "diff"]

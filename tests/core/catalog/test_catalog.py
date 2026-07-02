@@ -6,6 +6,8 @@ from synthra.core.catalog import (
     DatasetCatalog,
     DatasetNotFoundError,
     OperatorNotFoundError,
+    tokenize_expression,
+    TokenType,
 )
 from synthra.core.domain import Region, Universe
 
@@ -151,9 +153,9 @@ def test_validate_expression_variables(catalog: DatasetCatalog) -> None:
 
     # Expression with invalid variables (not in pv fields)
     invalid_vars = catalog.validate_expression_variables(
-        "ts_mean(close_price, 20) / open_price", "pv"
+        "ts_mean(invalid_var_1, 20) / invalid_var_2", "pv"
     )
-    assert sorted(invalid_vars) == ["close_price", "open_price"]
+    assert sorted(invalid_vars) == ["invalid_var_1", "invalid_var_2"]
 
     # Expression with invalid operators
     invalid_ops = catalog.validate_expression_variables(
@@ -179,3 +181,91 @@ def test_metadata_helpers(catalog: DatasetCatalog) -> None:
 
     with pytest.raises(OperatorNotFoundError):
         catalog.get_operator_arity("invalid_operator")
+
+
+def test_rich_metadata_models(catalog: DatasetCatalog) -> None:
+    """Tests retrieving and verifying rich metadata models from the catalog."""
+    # Dataset Metadata
+    ds_meta = catalog.get_dataset_metadata("pv")
+    assert ds_meta is not None
+    assert ds_meta.name == "pv"
+    assert ds_meta.category == "market_data"
+    assert Region.US in ds_meta.regions
+    assert Universe.TOP3000 in ds_meta.universes
+    assert "market" in ds_meta.aliases
+
+    # Field Metadata
+    f_meta = catalog.get_field_metadata("pv", "close")
+    assert f_meta is not None
+    assert f_meta.name == "close"
+    assert f_meta.data_type == "float"
+    assert f_meta.frequency == "daily"
+    assert f_meta.delay == 1
+    assert f_meta.nullable is False
+    assert "close_price" in f_meta.aliases
+
+    # Operator Metadata
+    op_meta = catalog.get_operator_metadata("ts_mean")
+    assert op_meta is not None
+    assert op_meta.name == "ts_mean"
+    assert op_meta.min_args == 2
+    assert op_meta.max_args == 2
+    assert op_meta.argument_types == ["float", "int"]
+    assert op_meta.return_type == "float"
+    assert "avg" in op_meta.aliases
+
+
+def test_alias_lookups(catalog: DatasetCatalog) -> None:
+    """Tests that lookups correctly resolve dataset, field, and operator aliases."""
+    # Dataset alias lookup
+    ds = catalog.get_dataset("market")
+    assert ds is not None
+    assert ds.name == "pv"
+
+    # Operator alias lookup
+    op = catalog.get_operator("avg")
+    assert op is not None
+    assert op.name == "ts_mean"
+
+    # Field alias validation
+    assert catalog.validate_field("market", "c") is True
+    assert catalog.validate_field("pv", "close_price") is True
+    assert catalog.validate_field("pv", "c") is True
+
+    # Delay validation with field aliases
+    assert catalog.validate_delay("market", "c", 1) is True
+    assert catalog.validate_delay("pv", "close_price", 1) is True
+
+    # Operator validation with operator aliases
+    assert catalog.validate_operator("avg", 2) is True
+    assert catalog.validate_operator("lag", 2) is True
+
+
+def test_tokenizer() -> None:
+    """Tests the reusable expression tokenizer."""
+    expr = "ts_mean(close, 20) / open + 1.5"
+    tokens = tokenize_expression(expr)
+
+    # Validate types and values
+    expected = [
+        (TokenType.IDENTIFIER, "ts_mean"),
+        (TokenType.SYMBOL, "("),
+        (TokenType.IDENTIFIER, "close"),
+        (TokenType.SYMBOL, ","),
+        (TokenType.NUMBER, "20"),
+        (TokenType.SYMBOL, ")"),
+        (TokenType.SYMBOL, "/"),
+        (TokenType.IDENTIFIER, "open"),
+        (TokenType.SYMBOL, "+"),
+        (TokenType.NUMBER, "1.5"),
+    ]
+
+    assert len(tokens) == len(expected)
+    for token, (exp_type, exp_val) in zip(tokens, expected):
+        assert token.type == exp_type
+        assert token.value == exp_val
+
+    # Test mismatch error
+    with pytest.raises(ValueError) as excinfo:
+        tokenize_expression("close @ vwap")
+    assert "Unexpected character '@'" in str(excinfo.value)
