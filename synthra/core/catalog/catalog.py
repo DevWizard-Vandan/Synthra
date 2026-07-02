@@ -188,10 +188,14 @@ class DatasetCatalog:
         """Filter datasets by region and universe compatibility."""
         results = []
         for meta in self._dataset_metadata.values():
-            if region and region.value not in meta.regions:
-                continue
-            if universe and universe.value not in meta.universes:
-                continue
+            if region is not None:
+                region_val = getattr(region, "value", region)
+                if region_val not in meta.regions:
+                    continue
+            if universe is not None:
+                universe_val = getattr(universe, "value", universe)
+                if universe_val not in meta.universes:
+                    continue
             results.append(self._datasets[meta.name])
         return results
 
