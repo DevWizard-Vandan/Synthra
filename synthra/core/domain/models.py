@@ -6,9 +6,59 @@ Pydantic schemas. It serves as the primary system-wide interface vocabulary.
 
 import re
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
-from typing import List, Literal, Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class CampaignStatus(str, Enum):
+    """Execution status of a research campaign."""
+    DRAFT = "draft"
+    ACTIVE = "active"
+    CONCLUDED = "concluded"
+
+
+class HypothesisStatus(str, Enum):
+    """Validation status of a research hypothesis."""
+    DRAFT = "draft"
+    TESTED = "tested"
+    ARCHIVED = "archived"
+
+
+class ExperimentStatus(str, Enum):
+    """Orchestration status of an experiment simulation."""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class Region(str, Enum):
+    """Trading regions supported by the backtesting platform."""
+    US = "US"
+    EU = "EU"
+    AP = "AP"
+    GLB = "GLB"
+
+
+class Universe(str, Enum):
+    """Trading universes supported by the backtesting platform."""
+    TOP3000 = "TOP3000"
+    TOP2000 = "TOP2000"
+    TOP1000 = "TOP1000"
+    TOP500 = "TOP500"
+
+
+class ResearchAssetType(str, Enum):
+    """Categories of assets generated during research execution."""
+    NOTEBOOK = "notebook"
+    REPORT = "report"
+    PLOT = "plot"
+    FAST_EXPRESSION = "fast_expression"
+    PYTHON_ALPHA = "python_alpha"
+    DATASET_EXPORT = "dataset_export"
+    LOG = "log"
 
 
 class BaseDomainModel(BaseModel):
@@ -19,6 +69,7 @@ class BaseDomainModel(BaseModel):
         extra="forbid",
         strict=True,
         arbitrary_types_allowed=True,
+        use_enum_values=True,  # Serialize enums directly to their values
     )
 
 
@@ -27,11 +78,11 @@ class Campaign(BaseDomainModel):
 
     id: str = Field(..., description="Unique ID matching 'CMP-XXXX'")
     name: str = Field(..., min_length=1)
-    region: str = Field(..., description="Target trading region (e.g. US, EU, AP)")
-    universe: str = Field(..., description="Target trading universe (e.g. TOP3000)")
+    region: Region = Field(..., description="Target trading region")
+    universe: Universe = Field(..., description="Target trading universe")
     budget_limit: float = Field(..., gt=0.0)
     budget_spent: float = Field(default=0.0, ge=0.0)
-    status: Literal["draft", "active", "concluded"] = Field(default="draft")
+    status: CampaignStatus = Field(default=CampaignStatus.DRAFT)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     concluded_at: Optional[datetime] = Field(default=None)
 
@@ -53,7 +104,7 @@ class Hypothesis(BaseDomainModel):
     target_variable: str = Field(..., min_length=1)
     datasets: List[str] = Field(..., min_length=1)
     operators: List[str] = Field(..., min_length=1)
-    status: Literal["draft", "tested", "archived"] = Field(default="draft")
+    status: HypothesisStatus = Field(default=HypothesisStatus.DRAFT)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     @field_validator("id")
@@ -77,8 +128,8 @@ class SimulationRequest(BaseDomainModel):
     """System-agnostic simulation request parameters."""
 
     expression: str = Field(..., min_length=1)
-    region: str = Field(..., min_length=1)
-    universe: str = Field(..., min_length=1)
+    region: Region
+    universe: Universe
     delay: int = Field(default=1, ge=0)
     decay: int = Field(default=0, ge=0)
     neutralization: str = Field(default="SUBINDUSTRY", min_length=1)
@@ -102,9 +153,7 @@ class Experiment(BaseDomainModel):
     campaign_id: str = Field(..., description="Parent campaign ID")
     hypothesis_id: str = Field(..., description="Parent hypothesis ID")
     expression: str = Field(..., min_length=1)
-    status: Literal["pending", "running", "completed", "failed"] = Field(
-        default="pending"
-    )
+    status: ExperimentStatus = Field(default=ExperimentStatus.PENDING)
     request: SimulationRequest
     result: Optional[SimulationResult] = Field(default=None)
     error_message: Optional[str] = Field(default=None)
@@ -144,10 +193,7 @@ class AlphaCandidate(BaseDomainModel):
     hypothesis_id: str = Field(..., description="Source hypothesis ID")
     campaign_id: str = Field(..., description="Source campaign ID")
     expression: str = Field(..., min_length=1)
-    sharpe: float
-    fitness: float
-    turnover: float
-    margin: float
+    result: SimulationResult = Field(..., description="Embedded backtest results")
     is_submitted: bool = Field(default=False)
     submitted_at: Optional[datetime] = Field(default=None)
 
@@ -188,7 +234,7 @@ class Dataset(BaseDomainModel):
     """Platform dataset metadata profile."""
 
     name: str = Field(..., min_length=1)
-    region: str = Field(..., min_length=1)
+    region: Region = Field(..., description="Region mapping for dataset")
     category: str = Field(..., min_length=1)
     description: str = Field(..., min_length=1)
     fields: List[str] = Field(..., min_length=1)
@@ -208,7 +254,7 @@ class ResearchAsset(BaseDomainModel):
 
     id: str = Field(..., description="Unique ID matching 'AST-XXXX'")
     campaign_id: str = Field(..., description="Associated campaign ID")
-    type: str = Field(..., description="e.g. notebook, plot, code, report")
+    type: ResearchAssetType = Field(..., description="Asset type classification")
     file_path: Path
     description: str = Field(..., min_length=1)
     created_at: datetime = Field(default_factory=datetime.utcnow)

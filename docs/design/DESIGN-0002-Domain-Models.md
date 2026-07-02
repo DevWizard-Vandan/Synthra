@@ -6,8 +6,8 @@
 design:
   id: DESIGN-0002
   title: "Domain Models Definition"
-  version: 1.0
-  status: Approved
+  version: 1.1
+  status: Frozen 🧊
   priority: Critical
 
 owner: Project Architect
@@ -62,8 +62,9 @@ Without a central definition of these models, the interfaces between the agents,
 # 3. Assumptions
 
 - **A1**: All domain models are immutable after instantiation (`frozen=True`) to prevent race conditions or unexpected mutations during parallel research campaign executions.
-- **A2**: Standard ISO 8601 UTC string format is used for all timestamp tracking.
+- **A2**: Standard ISO 8601 UTC datetime objects are used internally for all timestamp tracking.
 - **A3**: Entity IDs conform to standardized alphanumeric prefixes (`CMP-XXXX`, `HYP-XXXX`, `EXP-XXXX`, `AST-XXXX`) to facilitate simple pattern matching and cross-referencing.
+- **A4**: Enums are serialized directly by their string/primitive value (`use_enum_values=True`) to ensure database schemas and JSON payloads remain clean and deterministic.
 
 ---
 
@@ -107,23 +108,43 @@ Pydantic v2 guarantees absolute safety and structural integrity. By defining mod
 
 # 6. Detailed Component Design
 
-All domain models inherit from a common base class, `BaseDomainModel`, which enforces global Pydantic configurations.
+All domain models inherit from a common base class, `BaseDomainModel`, which enforces global Pydantic configurations including immutability and enum serialization rules.
 
 ```mermaid
 classDiagram
     class BaseDomainModel {
         +model_config
     }
+    class CampaignStatus {
+        <<enum>>
+        DRAFT
+        ACTIVE
+        CONCLUDED
+    }
+    class Region {
+        <<enum>>
+        US
+        EU
+        AP
+        GLB
+    }
+    class Universe {
+        <<enum>>
+        TOP3000
+        TOP2000
+        TOP1000
+        TOP500
+    }
     class Campaign {
         +id: str
         +name: str
-        +region: str
-        +universe: str
+        +region: Region
+        +universe: Universe
         +budget_limit: float
         +budget_spent: float
-        +status: str
-        +created_at: str
-        +concluded_at: str
+        +status: CampaignStatus
+        +created_at: datetime
+        +concluded_at: datetime
     }
     class Hypothesis {
         +id: str
@@ -132,25 +153,25 @@ classDiagram
         +target_variable: str
         +datasets: list
         +operators: list
-        +status: str
-        +created_at: str
+        +status: HypothesisStatus
+        +created_at: datetime
     }
     class Experiment {
         +id: str
         +campaign_id: str
         +hypothesis_id: str
         +expression: str
-        +status: str
+        +status: ExperimentStatus
         +request: SimulationRequest
         +result: SimulationResult
         +error_message: str
-        +created_at: str
-        +finished_at: str
+        +created_at: datetime
+        +finished_at: datetime
     }
     class SimulationRequest {
         +expression: str
-        +region: str
-        +universe: str
+        +region: Region
+        +universe: Universe
         +delay: int
         +decay: int
         +neutralization: str
@@ -161,7 +182,7 @@ classDiagram
         +margin: float
         +turnover: float
         +coverage: float
-        +simulated_at: str
+        +simulated_at: datetime
     }
     class AlphaCandidate {
         +id: str
@@ -169,12 +190,9 @@ classDiagram
         +hypothesis_id: str
         +campaign_id: str
         +expression: str
-        +sharpe: float
-        +fitness: float
-        +turnover: float
-        +margin: float
+        +result: SimulationResult
         +is_submitted: bool
-        +submitted_at: str
+        +submitted_at: datetime
     }
 
     BaseDomainModel <|-- Campaign
@@ -207,7 +225,7 @@ Simulation Requested (SimulationRequest) -> Dispatched to client
 Simulation Completed (SimulationResult) -> Experiment Completed (EXP-0001: completed)
        │
        ▼
-Check Performance Bounds -> AlphaCandidate Created (AST-0001)
+Check Performance Bounds -> AlphaCandidate Created (AST-0001 with embedded SimulationResult)
 ```
 
 ---
@@ -223,7 +241,7 @@ Check Performance Bounds -> AlphaCandidate Created (AST-0001)
 
 # 9. Open Questions
 
-- *None*. The model definitions are isolated to standard python datatypes.
+- *None*.
 
 ---
 

@@ -4,8 +4,8 @@
 spec:
   id: SPEC-0002
   title: "Domain Models Definition"
-  version: 1.0
-  status: Approved
+  version: 1.1
+  status: Frozen 🧊
   priority: Critical
 
 owner: Project Architect
@@ -43,7 +43,7 @@ estimated_effort: 1 Day
 
 # 1. Executive Summary
 
-This specification defines the directory structure, file names, and class definitions for SYNTHRA's domain model layer. It defines 9 immutable schemas representing the core research lifecycle.
+This specification defines the directory structure, file names, and class definitions for SYNTHRA's domain model layer. It defines 9 immutable schemas and their related Enum classes representing the core research lifecycle.
 
 ---
 
@@ -57,7 +57,7 @@ synthra/
     ├── __init__.py
     └── domain/
         ├── __init__.py
-        └── models.py          # Strongly typed Pydantic models
+        └── models.py          # Strongly typed Pydantic models & Enums
 ```
 
 ---
@@ -67,7 +67,7 @@ synthra/
 ### 3.1 Explicitly Allowed Dependencies
 * `pydantic` (v2.10+) — Runtime schema validation and immutability.
 * `pathlib` — Native filesystem path mapping.
-* `typing` / `re` / `datetime` — Standard python libraries for typing, regex checks, and timestamps.
+* `typing` / `re` / `enum` / `datetime` — Standard python libraries for typing, regex checks, enums, and timestamps.
 
 ### 3.2 Strictly Forbidden Dependencies
 * `sqlite3` / `sqlalchemy` — No database access or driver definitions are allowed in the domain tier.
@@ -80,9 +80,47 @@ synthra/
 ```python
 import re
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+class CampaignStatus(str, Enum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    CONCLUDED = "concluded"
+
+class HypothesisStatus(str, Enum):
+    DRAFT = "draft"
+    TESTED = "tested"
+    ARCHIVED = "archived"
+
+class ExperimentStatus(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+class Region(str, Enum):
+    US = "US"
+    EU = "EU"
+    AP = "AP"
+    GLB = "GLB"
+
+class Universe(str, Enum):
+    TOP3000 = "TOP3000"
+    TOP2000 = "TOP2000"
+    TOP1000 = "TOP1000"
+    TOP500 = "TOP500"
+
+class ResearchAssetType(str, Enum):
+    NOTEBOOK = "notebook"
+    REPORT = "report"
+    PLOT = "plot"
+    FAST_EXPRESSION = "fast_expression"
+    PYTHON_ALPHA = "python_alpha"
+    DATASET_EXPORT = "dataset_export"
+    LOG = "log"
 
 class BaseDomainModel(BaseModel):
     """Base class for all domain models enforcing immutability."""
@@ -90,18 +128,19 @@ class BaseDomainModel(BaseModel):
         frozen=True,
         extra="forbid",
         strict=True,
-        arbitrary_types_allowed=True
+        arbitrary_types_allowed=True,
+        use_enum_values=True  # Serialize enums by their values
     )
 
 class Campaign(BaseDomainModel):
     """Bounding context for a quantitative research program."""
     id: str = Field(..., description="Unique ID matching 'CMP-XXXX'")
     name: str = Field(..., min_length=1)
-    region: str = Field(..., description="Target trading region (e.g. US, EU, AP)")
-    universe: str = Field(..., description="Target trading universe (e.g. TOP3000)")
+    region: Region = Field(..., description="Target trading region")
+    universe: Universe = Field(..., description="Target trading universe")
     budget_limit: float = Field(..., gt=0.0)
     budget_spent: float = Field(default=0.0, ge=0.0)
-    status: Literal["draft", "active", "concluded"] = Field(default="draft")
+    status: CampaignStatus = Field(default=CampaignStatus.DRAFT)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     concluded_at: Optional[datetime] = Field(default=None)
 
@@ -120,7 +159,7 @@ class Hypothesis(BaseDomainModel):
     target_variable: str = Field(..., min_length=1)
     datasets: List[str] = Field(..., min_length=1)
     operators: List[str] = Field(..., min_length=1)
-    status: Literal["draft", "tested", "archived"] = Field(default="draft")
+    status: HypothesisStatus = Field(default=HypothesisStatus.DRAFT)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     @field_validator("id")
@@ -140,8 +179,8 @@ class Hypothesis(BaseDomainModel):
 class SimulationRequest(BaseDomainModel):
     """System-agnostic simulation request parameters."""
     expression: str = Field(..., min_length=1)
-    region: str
-    universe: str
+    region: Region
+    universe: Universe
     delay: int = Field(default=1, ge=0)
     decay: int = Field(default=0, ge=0)
     neutralization: str = Field(default="SUBINDUSTRY")
@@ -161,7 +200,7 @@ class Experiment(BaseDomainModel):
     campaign_id: str
     hypothesis_id: str
     expression: str = Field(..., min_length=1)
-    status: Literal["pending", "running", "completed", "failed"] = Field(default="pending")
+    status: ExperimentStatus = Field(default=ExperimentStatus.PENDING)
     request: SimulationRequest
     result: Optional[SimulationResult] = Field(default=None)
     error_message: Optional[str] = Field(default=None)
@@ -196,10 +235,7 @@ class AlphaCandidate(BaseDomainModel):
     hypothesis_id: str
     campaign_id: str
     expression: str
-    sharpe: float
-    fitness: float
-    turnover: float
-    margin: float
+    result: SimulationResult = Field(..., description="Embedded backtest metrics")
     is_submitted: bool = Field(default=False)
     submitted_at: Optional[datetime] = Field(default=None)
 
@@ -234,7 +270,7 @@ class AlphaCandidate(BaseDomainModel):
 class Dataset(BaseDomainModel):
     """Platform dataset metadata profile."""
     name: str = Field(..., min_length=1)
-    region: str
+    region: Region
     category: str
     description: str
     fields: List[str] = Field(..., min_length=1)
@@ -250,7 +286,7 @@ class ResearchAsset(BaseDomainModel):
     """Arbitrary file output produced during the research lifecycle."""
     id: str = Field(..., description="Unique ID matching 'AST-XXXX'")
     campaign_id: str
-    type: str = Field(..., description="e.g. notebook, plot, code, report")
+    type: ResearchAssetType = Field(..., description="Asset type classification")
     file_path: Path
     description: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -274,6 +310,6 @@ class ResearchAsset(BaseDomainModel):
 
 # 5. Definition of Done Checklist
 
-* [ ] Implement exactly two Python modules (`synthra/core/domain/__init__.py` and `synthra/core/domain/models.py`).
-* [ ] Zero static type checking warnings using `mypy`.
-* [ ] Pytest suite achieves 100% green coverage on model instantiation, validation, and immutability checks.
+* [x] Implement exactly two Python modules (`synthra/core/domain/__init__.py` and `synthra/core/domain/models.py`).
+* [x] Zero static type checking warnings using `mypy`.
+* [x] Pytest suite achieves 100% green coverage on model instantiation, validation, and immutability checks.
