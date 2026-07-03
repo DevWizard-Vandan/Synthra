@@ -1,6 +1,5 @@
 """Offline integration tests for the autonomous Research Orchestrator pipeline."""
 
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Tuple
@@ -21,6 +20,7 @@ from synthra.governor import (
 )
 from synthra.governor.events import (
     CampaignCheckpointed,
+    CampaignFinished,
     CampaignRecovered,
     CandidateQueued,
 )
@@ -112,7 +112,16 @@ def test_pipeline_and_candidate_queue(
 
     # 1. Setup events logging
     captured_events: List[Any] = []
-    gov.event_bus.subscribe(captured_events.append)
+    import threading
+
+    finished_event = threading.Event()
+
+    def listener(event: Any) -> None:
+        captured_events.append(event)
+        if isinstance(event, CampaignFinished) and event.campaign_id == "CMP-0001":
+            finished_event.set()
+
+    gov.event_bus.subscribe(listener)
 
     c = Campaign(
         id="CMP-0001",
@@ -130,7 +139,7 @@ def test_pipeline_and_candidate_queue(
         gov.enqueue_campaign(c, priority=10)
 
         # Wait for completion
-        time.sleep(1.0)
+        assert finished_event.wait(timeout=5.0)
         assert gov.get_campaign_state("CMP-0001") == CampaignState.COMPLETED
 
         # Verify candidate enqueued
@@ -161,7 +170,16 @@ def test_checkpoint_recovery_flow(
     db_manager, gov, _ = test_env
 
     captured_events: List[Any] = []
-    gov.event_bus.subscribe(captured_events.append)
+    import threading
+
+    finished_event = threading.Event()
+
+    def listener(event: Any) -> None:
+        captured_events.append(event)
+        if isinstance(event, CampaignFinished) and event.campaign_id == "CMP-0002":
+            finished_event.set()
+
+    gov.event_bus.subscribe(listener)
 
     c = Campaign(
         id="CMP-0002",
@@ -171,7 +189,6 @@ def test_checkpoint_recovery_flow(
         budget_limit=100.0,
         status=CampaignStatus.ACTIVE,
         created_at=datetime.utcnow(),
-        target_alpha_count=1,
     )
 
     # 1. Pre-populate database with checkpoint representing task_idx 2 completed
@@ -201,7 +218,7 @@ def test_checkpoint_recovery_flow(
         gov.scheduler.recover_campaigns()
 
         # Wait for completion
-        time.sleep(1.0)
+        assert finished_event.wait(timeout=10.0)
 
         # Assert campaign completes
         assert gov.get_campaign_state("CMP-0002") == CampaignState.COMPLETED
@@ -225,6 +242,16 @@ def test_max_simulations_stop_condition(
     """Verify worker concludes campaign early when max simulations limit is hit."""
     db_manager, gov, _ = test_env
 
+    import threading
+
+    finished_event = threading.Event()
+
+    def listener(event: Any) -> None:
+        if isinstance(event, CampaignFinished) and event.campaign_id == "CMP-0003":
+            finished_event.set()
+
+    gov.event_bus.subscribe(listener)
+
     c = Campaign(
         id="CMP-0003",
         name="Max sims limit test",
@@ -239,7 +266,8 @@ def test_max_simulations_stop_condition(
     gov.start()
     try:
         gov.enqueue_campaign(c, priority=5)
-        time.sleep(1.0)
+        # Wait for completion
+        assert finished_event.wait(timeout=5.0)
 
         assert gov.get_campaign_state("CMP-0003") == CampaignState.COMPLETED
         progress = gov.progress_tracker.get_progress("CMP-0003")
@@ -255,6 +283,16 @@ def test_target_alpha_count_stop_condition(
     """Verify worker concludes campaign early when target alpha count is met."""
     db_manager, gov, _ = test_env
 
+    import threading
+
+    finished_event = threading.Event()
+
+    def listener(event: Any) -> None:
+        if isinstance(event, CampaignFinished) and event.campaign_id == "CMP-0004":
+            finished_event.set()
+
+    gov.event_bus.subscribe(listener)
+
     c = Campaign(
         id="CMP-0004",
         name="Target alpha limit test",
@@ -269,7 +307,8 @@ def test_target_alpha_count_stop_condition(
     gov.start()
     try:
         gov.enqueue_campaign(c, priority=5)
-        time.sleep(1.0)
+        # Wait for completion
+        assert finished_event.wait(timeout=5.0)
 
         assert gov.get_campaign_state("CMP-0004") == CampaignState.COMPLETED
         progress = gov.progress_tracker.get_progress("CMP-0004")
