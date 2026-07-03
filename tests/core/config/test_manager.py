@@ -1,10 +1,10 @@
-# mypy: ignore-errors
 """Unit test suite for SYNTHRA Configuration Manager (SPEC-0001)."""
 
 import os
 import time
 import pytest
 from pathlib import Path
+from typing import Generator
 from pydantic import ValidationError
 from synthra.core.config.exceptions import (
     ConfigurationFileMissing,
@@ -17,7 +17,7 @@ from synthra.core.config.models import ApplicationConfig
 
 
 @pytest.fixture(autouse=True)
-def clean_env():
+def clean_env() -> Generator[None, None, None]:
     """Ensures a clean environment before each test runs."""
     old_env = dict(os.environ)
     # Remove any SYNTHRA_ prefixed keys
@@ -77,7 +77,7 @@ metrics_enabled = true
 
 
 # TC-001: Empty paths array or invalid targets passed to manager loop.
-def test_tc001_empty_or_invalid_paths(tmp_path):
+def test_tc001_empty_or_invalid_paths(tmp_path: Path) -> None:
     # Empty paths array
     with pytest.raises(ConfigurationFileMissing) as exc_info:
         ConfigurationManager.bootstrap_configuration([], {})
@@ -98,7 +98,7 @@ def test_tc001_empty_or_invalid_paths(tmp_path):
 
 
 # TC-002: Invalid primitive schema type parameter entry.
-def test_tc002_invalid_type_entry(tmp_path):
+def test_tc002_invalid_type_entry(tmp_path: Path) -> None:
     base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
 
     # Overriding with invalid type (string for integer) under strict mode
@@ -114,7 +114,7 @@ concurrency_pool_size = "abc"
 
 
 # TC-003: Injection of unmapped tracking parameters outside schema constraints.
-def test_tc003_extra_unmapped_parameters(tmp_path):
+def test_tc003_extra_unmapped_parameters(tmp_path: Path) -> None:
     base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
 
     # Override adding an unmapped parameter (extra="forbid")
@@ -130,7 +130,7 @@ unmapped_parameter = 100
 
 
 # TC-004: Target mapping missing mandatory environment variables (api_key).
-def test_tc004_missing_or_empty_secrets(tmp_path):
+def test_tc004_missing_or_empty_secrets(tmp_path: Path) -> None:
     # Base configuration with empty key placeholder
     base_toml = """
 [app]
@@ -185,7 +185,7 @@ metrics_enabled = true
 
 
 # TC-005: Top-level schema version parameter is incremented out of bounds.
-def test_tc005_unsupported_version(tmp_path):
+def test_tc005_unsupported_version(tmp_path: Path) -> None:
     base_toml = get_valid_base_toml()
     # Replace version with 99
     invalid_version_toml = base_toml.replace(
@@ -199,7 +199,7 @@ def test_tc005_unsupported_version(tmp_path):
 
 
 # TC-006: Flawless structural inputs and configuration files sheet.
-def test_tc006_flawless_bootstrap(tmp_path):
+def test_tc006_flawless_bootstrap(tmp_path: Path) -> None:
     base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
 
     # Run bootstrap
@@ -223,7 +223,7 @@ def test_tc006_flawless_bootstrap(tmp_path):
 
 
 # TC-007: Post-instantiation code write mutation request execution.
-def test_tc007_immutability(tmp_path):
+def test_tc007_immutability(tmp_path: Path) -> None:
     base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
     config = ConfigurationManager.bootstrap_configuration([base_file], {})
 
@@ -233,7 +233,7 @@ def test_tc007_immutability(tmp_path):
 
 
 # TC-008: Serialization lookup verification pass.
-def test_tc008_serialization_masking(tmp_path):
+def test_tc008_serialization_masking(tmp_path: Path) -> None:
     base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
     config = ConfigurationManager.bootstrap_configuration([base_file], {})
 
@@ -246,7 +246,7 @@ def test_tc008_serialization_masking(tmp_path):
 
 
 # TC-009: Malformed TOML syntax verification.
-def test_tc009_malformed_toml(tmp_path):
+def test_tc009_malformed_toml(tmp_path: Path) -> None:
     base_file = write_toml(tmp_path / "base.toml", "[app\nname = ")
     with pytest.raises(ConfigurationValidationError) as exc_info:
         ConfigurationManager.bootstrap_configuration([base_file], {})
@@ -254,7 +254,7 @@ def test_tc009_malformed_toml(tmp_path):
 
 
 # TC-010: Environment override precedence over TOML values.
-def test_tc010_env_precedence(tmp_path):
+def test_tc010_env_precedence(tmp_path: Path) -> None:
     base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
 
     # Set override env variables
@@ -267,7 +267,7 @@ def test_tc010_env_precedence(tmp_path):
 
 
 # TC-011: Verify Loaded At timestamp presence and properties.
-def test_tc011_loaded_at_timestamp(tmp_path):
+def test_tc011_loaded_at_timestamp(tmp_path: Path) -> None:
     base_file = write_toml(tmp_path / "base.toml", get_valid_base_toml())
 
     # Bootstrap first time

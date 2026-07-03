@@ -171,6 +171,7 @@ def test_checkpoint_recovery_flow(
         budget_limit=100.0,
         status=CampaignStatus.ACTIVE,
         created_at=datetime.utcnow(),
+        target_alpha_count=1,
     )
 
     # 1. Pre-populate database with checkpoint representing task_idx 2 completed

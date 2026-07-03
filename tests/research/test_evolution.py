@@ -1,8 +1,7 @@
-# mypy: ignore-errors
 """Exhaustive offline tests for the Research Evolution Engine."""
 
 from datetime import datetime
-
+from pathlib import Path
 
 from synthra.core.catalog import DatasetCatalog
 from synthra.core.domain import Region, SimulationRequest, SimulationResult, Universe
@@ -65,7 +64,7 @@ def test_mutation_engine_advanced_strategies(catalog: DatasetCatalog) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_lineage_tracker_node_resolution(tmp_path) -> None:
+def test_lineage_tracker_node_resolution(tmp_path: Path) -> None:
     """Verify LineageTracker records parent/child relationships and generation."""
     db_file = tmp_path / "test_lineage.db"
     db_manager = DatabaseManager(str(db_file))
