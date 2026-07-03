@@ -1,5 +1,6 @@
 """Tests for the FastAPI service layer."""
 
+from typing import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -27,7 +28,7 @@ def _make_mock_state() -> MagicMock:
 
 
 @pytest.fixture()
-def client() -> TestClient:
+def client() -> Generator[TestClient, None, None]:
     """Provide a TestClient with mocked ServiceState initialization."""
     mock_state = _make_mock_state()
 
@@ -36,7 +37,7 @@ def client() -> TestClient:
 
         application = create_app()
         with TestClient(application, raise_server_exceptions=True) as tc:
-            yield tc  # type: ignore[misc]
+            yield tc
 
 
 # ---------------------------------------------------------------------------

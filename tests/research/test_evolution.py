@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Exhaustive offline tests for the Research Evolution Engine."""
 
 from datetime import datetime

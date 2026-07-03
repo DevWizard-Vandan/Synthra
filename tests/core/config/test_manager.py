@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit test suite for SYNTHRA Configuration Manager (SPEC-0001)."""
 
 import os

@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class CampaignEvent(BaseModel):
-    """Base event model for all broadcasted campaign actions."""
+class Event(BaseModel):
+    """Base event model for all broadcasted system and campaign events."""
 
     model_config = ConfigDict(
         frozen=True,
@@ -14,8 +14,13 @@ class CampaignEvent(BaseModel):
         strict=True,
     )
 
-    campaign_id: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class CampaignEvent(Event):
+    """Base event model for all broadcasted campaign actions."""
+
+    campaign_id: str
 
 
 class CampaignStarted(CampaignEvent):
@@ -141,20 +146,73 @@ class CampaignRecovered(CampaignEvent):
     generation: int
 
 
+class CampaignFinished(CampaignEvent):
+    """Broadcasted when a campaign concludes (completed, failed, or cancelled)."""
+
+    status: str
+
+
+class CandidateAccepted(CampaignEvent):
+    """Broadcasted when an alpha candidate is accepted for submission."""
+
+    candidate_id: str
+    expression: str
+    sharpe: float
+
+
+class WorkerIdle(Event):
+    """Broadcasted when a worker is idle and waiting for a job."""
+
+    worker_name: str
+
+
+class WorkerBusy(Event):
+    """Broadcasted when a worker starts processing a campaign."""
+
+    worker_name: str
+    campaign_id: str
+
+
+class GovernorStarted(Event):
+    """Broadcasted when the governor begins running."""
+
+    pass
+
+
+class GovernorStopped(Event):
+    """Broadcasted when the governor stops running."""
+
+    pass
+
+
 class CampaignEventBus:
     """Thread-safe event bus for registering listeners and publishing events."""
 
     def __init__(self) -> None:
-        """Initialize event bus with empty list of listeners."""
-        self._listeners: List[Callable[[CampaignEvent], None]] = []
+        """Initialize event bus with empty list of listeners and a lock."""
+        from threading import Lock
 
-    def subscribe(self, listener: Callable[[CampaignEvent], None]) -> None:
+        self._lock = Lock()
+        self._listeners: List[Callable[[Event], None]] = []
+
+    def subscribe(self, listener: Callable[[Event], None]) -> None:
         """Register a callback function to listen for published events."""
-        self._listeners.append(listener)
+        with self._lock:
+            self._listeners.append(listener)
 
-    def publish(self, event: CampaignEvent) -> None:
+    def unsubscribe(self, listener: Callable[[Event], None]) -> None:
+        """Remove a callback function from listening to events."""
+        with self._lock:
+            try:
+                self._listeners.remove(listener)
+            except ValueError:
+                pass
+
+    def publish(self, event: Event) -> None:
         """Broadcast an event to all registered listener callbacks."""
-        for listener in self._listeners:
+        with self._lock:
+            listeners = list(self._listeners)
+        for listener in listeners:
             try:
                 listener(event)
             except Exception:

@@ -21,6 +21,13 @@ from synthra.governor.events import (
     LearningUpdated,
     CampaignCheckpointed,
     CampaignRecovered,
+    Event,
+    CampaignFinished,
+    CandidateAccepted,
+    WorkerIdle,
+    WorkerBusy,
+    GovernorStarted,
+    GovernorStopped,
 )
 from synthra.governor.exceptions import (
     CampaignNotFoundError,
@@ -34,6 +41,7 @@ from synthra.governor.state import CampaignState, validate_transition
 from synthra.governor.tracker import CampaignProgress, CampaignProgressTracker
 from synthra.governor.worker import CampaignWorker
 from synthra.governor.submission import SubmissionQueue, QueuedCandidate
+from synthra.governor.telemetry import TelemetryManager
 
 __all__ = [
     "Governor",
@@ -69,4 +77,12 @@ __all__ = [
     "CampaignRecovered",
     "SubmissionQueue",
     "QueuedCandidate",
+    "Event",
+    "CampaignFinished",
+    "CandidateAccepted",
+    "WorkerIdle",
+    "WorkerBusy",
+    "GovernorStarted",
+    "GovernorStopped",
+    "TelemetryManager",
 ]

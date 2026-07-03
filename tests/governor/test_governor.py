@@ -16,6 +16,7 @@ from synthra.core.domain import (
 from synthra.execution.runner import SimulationRunner
 from synthra.governor import (
     CampaignEvent,
+    Event,
     CampaignEventBus,
     CampaignQueue,
     CampaignScheduler,
@@ -156,7 +157,7 @@ def test_event_bus_publishing() -> None:
     bus = CampaignEventBus()
     events_received = []
 
-    def listener(event: CampaignEvent) -> None:
+    def listener(event: Event) -> None:
         events_received.append(event)
 
     bus.subscribe(listener)
@@ -165,7 +166,7 @@ def test_event_bus_publishing() -> None:
     bus.publish(ev)
 
     assert len(events_received) == 1
-    assert events_received[0].campaign_id == "CMP-0001"
+    assert events_received[0].campaign_id == "CMP-0001"  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------

@@ -58,6 +58,7 @@ class ServiceState:
         logger.info("Initializing Research Pipeline subsystems")
         # Load LLM provider
         from synthra.research.hypothesis import ILLMProvider
+
         llm_bridge: ILLMProvider
         try:
             from synthra.llm import ProviderManager, StructuredLLMBridge
@@ -84,13 +85,16 @@ class ServiceState:
         from synthra.execution.client import WorldQuantExecutionClient
         from synthra.execution.models import WorldQuantCredentials
 
-        wq_user = os.environ.get("WQ_USERNAME") or os.environ.get("BRAIN_USERNAME") or "mock"
-        wq_pass = os.environ.get("WQ_PASSWORD") or os.environ.get("BRAIN_PASSWORD") or "mock"
+        wq_user = (
+            os.environ.get("WQ_USERNAME") or os.environ.get("BRAIN_USERNAME") or "mock"
+        )
+        wq_pass = (
+            os.environ.get("WQ_PASSWORD") or os.environ.get("BRAIN_PASSWORD") or "mock"
+        )
 
         client = WorldQuantExecutionClient(
             credentials=WorldQuantCredentials(
-                username=wq_user,
-                password=SecretStr(wq_pass)
+                username=wq_user, password=SecretStr(wq_pass)
             )
         )
         simulation_run = SimulationRunner(client)

@@ -3,11 +3,12 @@
 from typing import Optional
 
 from synthra.core.domain import Campaign
-from synthra.governor.events import CampaignEventBus
+from synthra.governor.events import CampaignEventBus, GovernorStarted, GovernorStopped
 from synthra.governor.queue import CampaignQueue
 from synthra.governor.scheduler import CampaignScheduler
 from synthra.governor.state import CampaignState
 from synthra.governor.tracker import CampaignProgress, CampaignProgressTracker
+from synthra.governor.telemetry import TelemetryManager
 from synthra.memory import DatabaseManager
 from synthra.research.orchestrator import ResearchOrchestrator
 
@@ -30,6 +31,8 @@ class Governor:
         self.queue = CampaignQueue()
         self.progress_tracker = CampaignProgressTracker()
         self.event_bus = CampaignEventBus()
+        self.telemetry = TelemetryManager(governor=self)
+        self.event_bus.subscribe(self.telemetry.handle_event)
 
         self.scheduler = CampaignScheduler(
             queue=self.queue,
@@ -45,12 +48,15 @@ class Governor:
 
     def start(self) -> None:
         """Start scheduler workers and recover interrupted campaigns."""
+        self.telemetry.start()
+        self.event_bus.publish(GovernorStarted())
         self.scheduler.start()
         self.scheduler.recover_campaigns()
 
     def stop(self) -> None:
         """Stop scheduler workers and conclude execution threads."""
         self.scheduler.stop()
+        self.event_bus.publish(GovernorStopped())
 
     def enqueue_campaign(self, campaign: Campaign, priority: int = 0) -> None:
         """Enroll a campaign into the scheduling queue."""

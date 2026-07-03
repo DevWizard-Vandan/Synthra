@@ -26,6 +26,10 @@ from synthra.governor.events import (
     LearningUpdated,
     CampaignCheckpointed,
     CampaignRecovered,
+    WorkerIdle,
+    WorkerBusy,
+    CandidateAccepted,
+    CampaignFinished,
 )
 from synthra.governor.exceptions import InvalidStateTransition
 from synthra.governor.queue import CampaignQueue
@@ -77,6 +81,8 @@ class CampaignWorker(Thread):
     def run(self) -> None:
         """Process campaign tasks sequentially while flagged as running."""
         logger.info("CampaignWorker-%d thread starting loop", self.worker_id)
+        self.event_bus.publish(WorkerIdle(worker_name=f"Worker-{self.worker_id}"))
+
         while self._running:
             try:
                 # Dequeue next campaign
@@ -87,6 +93,13 @@ class CampaignWorker(Thread):
 
                 campaign, priority = entry
 
+                self.event_bus.publish(
+                    WorkerBusy(
+                        worker_name=f"Worker-{self.worker_id}",
+                        campaign_id=campaign.id,
+                    )
+                )
+
                 logger.info(
                     "Worker %d dequeued Campaign %s with priority %d",
                     self.worker_id,
@@ -95,7 +108,20 @@ class CampaignWorker(Thread):
                 )
 
                 # Process the campaign
-                self._process_campaign(campaign)
+                try:
+                    self._process_campaign(campaign)
+                except Exception as e:
+                    logger.error(
+                        "Worker %d failed to process campaign %s: %s",
+                        self.worker_id,
+                        campaign.id,
+                        e,
+                    )
+                    self._conclude_campaign(campaign.id, CampaignState.FAILED)
+
+                self.event_bus.publish(
+                    WorkerIdle(worker_name=f"Worker-{self.worker_id}")
+                )
 
             except Exception as e:
                 logger.error("Worker %d encountered loop error: %s", self.worker_id, e)
@@ -481,6 +507,14 @@ class CampaignWorker(Thread):
                                         sharpe=result.sharpe,
                                     )
                                 )
+                                self.event_bus.publish(
+                                    CandidateAccepted(
+                                        campaign_id=campaign_id,
+                                        candidate_id=cand_id,
+                                        expression=req.expression,
+                                        sharpe=result.sharpe,
+                                    )
+                                )
                                 progress = self.progress_tracker.get_progress(
                                     campaign_id
                                 )
@@ -512,8 +546,7 @@ class CampaignWorker(Thread):
                                     lineage=lineage_dict,
                                     generation=generation_num,
                                     reason_selected=(
-                                        "passed selection criteria "
-                                        "(Sharpe >= 1.0)"
+                                        "passed selection criteria " "(Sharpe >= 1.0)"
                                     ),
                                 )
                                 self.submission_queue.enqueue(queued_cand)
@@ -669,5 +702,11 @@ class CampaignWorker(Thread):
                 self.event_bus.publish(CampaignCompleted(campaign_id=campaign_id))
             elif terminal_state == CampaignState.CANCELLED:
                 self.event_bus.publish(CampaignCancelled(campaign_id=campaign_id))
+            self.event_bus.publish(
+                CampaignFinished(
+                    campaign_id=campaign_id,
+                    status=terminal_state.value,
+                )
+            )
         except Exception as e:
             logger.error("Failed to conclude campaign %s: %s", campaign_id, e)

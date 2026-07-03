@@ -83,7 +83,7 @@ def test_campaign_validation() -> None:
     with pytest.raises(ValidationError):
         Campaign(
             id="CMP-0001",
-            name=12345,  # Invalid type under strict=True
+            name=12345,  # type: ignore[arg-type]  # Invalid type under strict=True
             region=Region.US,
             universe=Universe.TOP3000,
             budget_limit=5000.0,
@@ -91,7 +91,7 @@ def test_campaign_validation() -> None:
 
     # Test immutability
     with pytest.raises(ValidationError):
-        valid_campaign.status = CampaignStatus.CONCLUDED  # type: ignore
+        valid_campaign.status = CampaignStatus.CONCLUDED
 
 
 def test_hypothesis_validation() -> None:

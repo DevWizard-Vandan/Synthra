@@ -5,6 +5,7 @@ from typing import Mapping
 
 import pytest
 
+from pydantic import SecretStr
 from synthra.core.domain import Region, SimulationRequest, SimulationResult, Universe
 from synthra.execution import (
     HttpResponse,
@@ -78,8 +79,9 @@ class FakeClock:
 
 def make_client(transport: FakeTransport) -> WorldQuantExecutionClient:
     """Build a WorldQuant client with fake transport dependencies."""
+    creds = WorldQuantCredentials(username="user", password=SecretStr("secret"))
     return WorldQuantExecutionClient(
-        credentials=WorldQuantCredentials(username="user", password="secret"),
+        credentials=creds,
         config=WorldQuantExecutionConfig(api_base_url="https://brain.example.test"),
         transport=transport,
     )
