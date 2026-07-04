@@ -3,7 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Globe, Bot, Layers, RefreshCw } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { Globe, Bot, Layers, RefreshCw, LogOut } from "lucide-react";
 
 function StatusPill({
   label,
@@ -30,6 +31,24 @@ export function TopNav() {
     queryFn: api.status,
     refetchInterval: 5000,
   });
+
+  const { state: authState, username, logout } = useAuth();
+
+  const getAuthColor = (state: string) => {
+    switch (state) {
+      case "Authenticated":
+        return "text-emerald-400";
+      case "Waiting for Biometric Verification":
+        return "text-amber-400 animate-pulse font-bold";
+      case "Authenticating":
+      case "Session Refreshing":
+        return "text-sky-400";
+      case "Session Expired":
+      case "Logged Out":
+      default:
+        return "text-rose-400";
+    }
+  };
 
   const currentCampaign =
     status?.current_campaigns?.[0] ?? "None";
@@ -98,10 +117,23 @@ export function TopNav() {
               (status?.queue_sizes?.submission_queue ?? 0)
           )}
         />
+
+        <StatusPill
+          label="Auth State"
+          value={authState}
+          color={getAuthColor(authState)}
+        />
+        {username && (
+          <StatusPill
+            label="User"
+            value={username}
+            color="text-slate-300"
+          />
+        )}
       </div>
 
       {/* Refresh indicator */}
-      <div className="shrink-0 flex items-center gap-2">
+      <div className="shrink-0 flex items-center gap-3">
         <RefreshCw
           className={cn(
             "w-3.5 h-3.5 text-muted",
@@ -116,6 +148,15 @@ export function TopNav() {
           )}
           aria-label={status ? "Backend connected" : "Backend offline"}
         />
+        {authState === "Authenticated" && (
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Logout
+          </button>
+        )}
       </div>
     </header>
   );

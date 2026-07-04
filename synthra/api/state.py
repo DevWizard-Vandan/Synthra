@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from synthra.core.catalog import DatasetCatalog
 from synthra.memory import DatabaseManager
@@ -38,6 +38,10 @@ class ServiceState:
         self._orchestrator: Optional[ResearchOrchestrator] = None
         self._governor: Optional[Governor] = None
         self._ready: bool = False
+        self.auth_state: str = "Logged Out"
+        self.auth_username: Optional[str] = None
+        self.auth_verification_url: Optional[str] = None
+        self.execution_client: Optional[Any] = None
 
     @classmethod
     def get_instance(cls) -> "ServiceState":
@@ -97,6 +101,7 @@ class ServiceState:
                 username=wq_user, password=SecretStr(wq_pass)
             )
         )
+        self.execution_client = client
         simulation_run = SimulationRunner(client, db_manager=self._db_manager)
         ranker = CandidateRanker()
 

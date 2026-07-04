@@ -4,7 +4,14 @@ import { TopNav } from "./top-nav";
 import { Sidebar } from "./sidebar";
 import { motion } from "framer-motion";
 
+import { usePathname } from "next/navigation";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <TopNav />

@@ -55,3 +55,11 @@ class SimulationFailedError(SimulationRunnerError):
 
 class SimulationResultMappingError(SimulationRunnerError):
     """Raised when a completed response cannot be mapped to SimulationResult."""
+
+
+class VerificationRequiredError(ExecutionAuthenticationError):
+    """Raised when authentication requires external verification (MFA/biometric)."""
+
+    def __init__(self, verification_url: str) -> None:
+        super().__init__(f"Verification required: {verification_url}")
+        self.verification_url = verification_url

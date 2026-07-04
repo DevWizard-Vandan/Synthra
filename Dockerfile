@@ -1,12 +1,25 @@
-# ── Build stage ──────────────────────────────────────────────────────────────
+# ── Python build stage ────────────────────────────────────────────────────────
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-# Install build dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ── Frontend build stage ──────────────────────────────────────────────────────
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend-build
+
+# Disable Next.js telemetry during build
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
@@ -20,8 +33,11 @@ RUN useradd --create-home --shell /bin/bash synthra
 
 WORKDIR /app
 
-# Copy installed packages from builder
+# Copy installed Python packages
 COPY --from=builder /install /usr/local
+
+# Copy frontend static build files
+COPY --from=frontend-builder --chown=synthra:synthra /frontend-build/out ./frontend/out
 
 # Copy application source
 COPY --chown=synthra:synthra synthra/ ./synthra/

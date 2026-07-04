@@ -5,11 +5,38 @@
  * Endpoints not yet implemented are marked with AWAITING_BACKEND.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== "undefined") {
+    if (window.location.port === "3000") {
+      return "http://localhost:8000";
+    }
+    return "/api";
+  }
+  return "http://localhost:8000";
+};
+
+const BASE_URL = getBaseUrl();
 
 async function fetchJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${path} failed (${res.status}): ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function postJSON<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -110,6 +137,38 @@ export interface TelemetryEvent {
   [key: string]: unknown;
 }
 
+export interface LoginRequest {
+  username: string;
+  password: string;
+  remember: boolean;
+}
+
+export interface LoginResponse {
+  status: "success" | "verification_required" | "error";
+  message?: string;
+  verification_url?: string;
+}
+
+export interface LogoutResponse {
+  status: "success" | "error";
+  message?: string;
+}
+
+export type AuthState =
+  | "Logged Out"
+  | "Authenticating"
+  | "Waiting for Biometric Verification"
+  | "Authenticated"
+  | "Session Refreshing"
+  | "Session Expired";
+
+export interface AuthStatusResponse {
+  authenticated: boolean;
+  username: string | null;
+  state: AuthState;
+  verification_url: string | null;
+}
+
 // ─────────────────────────────────────────────
 //  Live API calls (backed by real endpoints)
 // ─────────────────────────────────────────────
@@ -125,6 +184,9 @@ export const api = {
   system: () => fetchJSON<SystemInfo>("/system"),
   governor: () => fetchJSON<GovernorInfo>("/governor"),
   campaigns: () => fetchJSON<CampaignsListResponse>("/campaigns"),
+  login: (data: LoginRequest) => postJSON<LoginResponse>("/auth/login", data),
+  logout: () => postJSON<LogoutResponse>("/auth/logout", {}),
+  authStatus: () => fetchJSON<AuthStatusResponse>("/auth/status"),
 };
 
 // ─────────────────────────────────────────────

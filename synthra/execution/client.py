@@ -12,6 +12,7 @@ from synthra.execution.exceptions import (
     ExecutionClientError,
     ExecutionRateLimitError,
     ExecutionServerError,
+    VerificationRequiredError,
 )
 from synthra.execution.models import (
     SimulationHandle,
@@ -71,6 +72,16 @@ class WorldQuantExecutionClient:
             headers,
             None,
         )
+        payload = {}
+        try:
+            payload = response.json_object()
+        except Exception:
+            pass
+
+        verification_url = payload.get("verification_url") or payload.get("mfa_url")
+        if isinstance(verification_url, str) and verification_url:
+            raise VerificationRequiredError(verification_url)
+
         if response.status_code not in {200, 201, 204}:
             if response.status_code in {401, 403}:
                 raise ExecutionAuthenticationError(

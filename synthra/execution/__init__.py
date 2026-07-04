@@ -16,6 +16,7 @@ from synthra.execution.exceptions import (
     SimulationTimeoutError,
     TimeoutError,
     TransportError,
+    VerificationRequiredError,
 )
 from synthra.execution.models import (
     SimulationHandle,
@@ -47,6 +48,7 @@ __all__ = [
     "TimeoutError",
     "TransportError",
     "UrllibHttpTransport",
+    "VerificationRequiredError",
     "WorldQuantCredentials",
     "WorldQuantExecutionClient",
     "WorldQuantExecutionConfig",
