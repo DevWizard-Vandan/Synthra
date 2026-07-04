@@ -68,6 +68,24 @@ def make_client(transport: FakeTransport) -> WorldQuantExecutionClient:
     )
 
 
+def auth_response() -> HttpResponse:
+    """Build a successful authentication response."""
+    return HttpResponse(
+        status_code=201,
+        headers={},
+        body=b'{"access_token":"session-token"}',
+    )
+
+
+def submit_response() -> HttpResponse:
+    """Build a successful simulation submission response."""
+    return HttpResponse(
+        status_code=202,
+        headers={"Location": "https://brain.example.test/simulations/SIM-1"},
+        body=b'{"id":"SIM-1","status":"running"}',
+    )
+
+
 def test_authenticate_stores_bearer_token() -> None:
     """Authentication stores bearer credentials for later requests."""
     transport = FakeTransport(
@@ -191,3 +209,61 @@ def test_get_simulation_returns_json_payload() -> None:
 
     assert payload["id"] == "SIM-1"
     assert payload["status"] == "complete"
+
+
+def test_client_automatic_session_refresh_on_401() -> None:
+    """A 401 response on submission triggers re-authentication."""
+    transport = FakeTransport(
+        responses=[
+            auth_response(),  # initial authenticate()
+            HttpResponse(
+                status_code=401, headers={}, body=b"{}"
+            ),  # first submit fails with 401
+            auth_response(),  # automatic re-auth
+            submit_response(),  # retried submit succeeds
+        ]
+    )
+    client = make_client(transport)
+    request = SimulationRequest(
+        expression="ts_rank(close, 20)",
+        region=Region.US,
+        universe=Universe.TOP3000,
+    )
+
+    handle = client.submit_simulation(request)
+    assert handle.id == "SIM-1"
+    # Verify we authenticated twice
+    assert len(transport.requests) == 4
+    assert transport.requests[0].url.endswith("/authentication")
+    assert transport.requests[1].url.endswith("/simulations")
+    assert transport.requests[2].url.endswith("/authentication")
+    assert transport.requests[3].url.endswith("/simulations")
+
+
+def test_client_retry_exponential_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Request retries sleep exponentially on transient failures."""
+    sleep_times = []
+
+    def mock_sleep(seconds: float) -> None:
+        sleep_times.append(seconds)
+
+    monkeypatch.setattr("time.sleep", mock_sleep)
+
+    transport = FakeTransport(
+        responses=[
+            HttpResponse(status_code=429, headers={}, body=b"{}"),
+            HttpResponse(status_code=500, headers={}, body=b"{}"),
+            HttpResponse(
+                status_code=201,
+                headers={},
+                body=b'{"access_token":"session-token"}',
+            ),
+        ]
+    )
+    client = make_client(transport)
+    client.authenticate()
+
+    assert len(transport.requests) == 3
+    # First retry backoff: 0.5 * 2^0 = 0.5s
+    # Second retry backoff: 0.5 * 2^1 = 1.0s
+    assert sleep_times == [0.5, 1.0]

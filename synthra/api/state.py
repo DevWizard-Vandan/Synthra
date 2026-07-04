@@ -97,7 +97,7 @@ class ServiceState:
                 username=wq_user, password=SecretStr(wq_pass)
             )
         )
-        simulation_run = SimulationRunner(client)
+        simulation_run = SimulationRunner(client, db_manager=self._db_manager)
         ranker = CandidateRanker()
 
         feedback_gen = FeedbackGenerator()

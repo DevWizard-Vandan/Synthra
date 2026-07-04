@@ -105,6 +105,21 @@ MIGRATIONS = [
         );
         """,
     ],
+    # Version 3: Added simulation_logs table
+    ["""
+        CREATE TABLE simulation_logs (
+            trace_id TEXT PRIMARY KEY,
+            expression TEXT NOT NULL,
+            raw_request TEXT NOT NULL,
+            raw_response TEXT,
+            normalized_metrics TEXT,
+            status TEXT NOT NULL,
+            error_message TEXT,
+            started_at TEXT NOT NULL,
+            finished_at TEXT,
+            duration REAL
+        );
+        """],
 ]
 
 

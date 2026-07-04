@@ -576,9 +576,9 @@ class CampaignWorker(Thread):
                                 generation_num = 0
                                 if self.orchestrator.mutation_engine:
                                     engine = self.orchestrator.mutation_engine
-                                    tracker = engine.lineage_tracker
-                                    if tracker:
-                                        node = tracker.get_node(req.expression)
+                                    lin_tracker = engine.lineage_tracker
+                                    if lin_tracker:
+                                        node = lin_tracker.get_node(req.expression)
                                         if node:
                                             lineage_dict = node.model_dump()
                                             generation_num = node.generation
@@ -708,9 +708,11 @@ class CampaignWorker(Thread):
                                 if validator.validate_request(mut_req, dataset_name):
                                     mut_type = "parameter_tuning"
                                     engine = self.orchestrator.mutation_engine
-                                    tracker = engine.lineage_tracker if engine else None
-                                    if tracker:
-                                        node = tracker.get_node(mut_req.expression)
+                                    lin_tracker = (
+                                        engine.lineage_tracker if engine else None
+                                    )
+                                    if lin_tracker:
+                                        node = lin_tracker.get_node(mut_req.expression)
                                         if node:
                                             mut_type = (
                                                 node.mutation_type or "parameter_tuning"

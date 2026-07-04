@@ -254,3 +254,73 @@ def test_runner_rejects_completed_payload_without_required_metrics() -> None:
 
     with pytest.raises(SimulationResultMappingError):
         runner.run(make_request())
+
+
+def test_runner_validates_expression_syntax() -> None:
+    """SimulationRunner raises error if expression has mismatched parentheses."""
+    from synthra.execution import SimulationRunnerError
+
+    client = make_client(FakeTransport(responses=[]))
+    runner = SimulationRunner(client=client, sleeper=lambda _: None)
+
+    # Empty expression check directly
+    with pytest.raises(SimulationRunnerError) as exc:
+        runner._validate_expression("")
+    assert "Expression must not be empty" in str(exc.value)
+
+    # Mismatched parentheses
+    req2 = SimulationRequest(
+        expression="ts_rank(close, 20", region=Region.US, universe=Universe.TOP3000
+    )
+    with pytest.raises(SimulationRunnerError) as exc:
+        runner.run(req2)
+    assert "Mismatched parentheses" in str(exc.value)
+
+
+def test_runner_persists_logs_to_database(tmp_path) -> None:
+    """SimulationRunner records raw execution details to DB."""
+    from synthra.memory import DatabaseManager
+
+    db_file = tmp_path / "test_runner.db"
+    db_mgr = DatabaseManager(str(db_file))
+
+    transport = FakeTransport(
+        responses=[
+            auth_response(),
+            submit_response(),
+            HttpResponse(
+                status_code=200,
+                headers={},
+                body=(
+                    b'{"status":"complete","result":{"sharpe":1.2,'
+                    b'"fitness":0.9,"margin":0.05,"turnover":0.3,'
+                    b'"coverage":0.8}}'
+                ),
+            ),
+        ]
+    )
+    runner = SimulationRunner(
+        client=make_client(transport),
+        sleeper=lambda _: None,
+        db_manager=db_mgr,
+    )
+
+    req = make_request()
+    result = runner.run(req)
+    assert result.sharpe == 1.2
+
+    # Query simulation_logs to check persistence
+    with db_mgr.connection() as conn:
+        row = conn.execute("SELECT * FROM simulation_logs").fetchone()
+        assert row is not None
+        assert row["expression"] == "ts_rank(close, 20)"
+        assert row["status"] == "completed"
+        assert row["raw_request"] is not None
+        assert "USA" in row["raw_request"] or "US" in row["raw_request"]
+        assert row["raw_response"] is not None
+        assert "complete" in row["raw_response"]
+        assert row["normalized_metrics"] is not None
+        assert "1.2" in row["normalized_metrics"]
+        assert row["started_at"] is not None
+        assert row["finished_at"] is not None
+        assert isinstance(row["duration"], float)

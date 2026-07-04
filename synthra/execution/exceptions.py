@@ -5,11 +5,19 @@ class ExecutionError(Exception):
     """Base error for execution-layer failures."""
 
 
-class ExecutionTransportError(ExecutionError):
+class TransportError(ExecutionError):
+    """Base error for transport-layer failures."""
+
+
+class ExecutionTransportError(TransportError):
     """Raised when HTTP transport fails before a structured response is available."""
 
 
-class ExecutionAuthenticationError(ExecutionError):
+class AuthenticationError(ExecutionError):
+    """Raised when authentication with the execution platform fails."""
+
+
+class ExecutionAuthenticationError(AuthenticationError):
     """Raised when authentication with the execution platform fails."""
 
 
@@ -17,7 +25,11 @@ class ExecutionClientError(ExecutionError):
     """Raised for non-retryable 4xx execution platform responses."""
 
 
-class ExecutionRateLimitError(ExecutionClientError):
+class RateLimitError(ExecutionClientError):
+    """Raised when the platform rejects a request due to rate limiting."""
+
+
+class ExecutionRateLimitError(RateLimitError):
     """Raised when the platform rejects a request due to rate limiting."""
 
 
@@ -29,7 +41,11 @@ class SimulationRunnerError(ExecutionError):
     """Base error for simulation runner failures."""
 
 
-class SimulationTimeoutError(SimulationRunnerError):
+class TimeoutError(SimulationRunnerError):
+    """Raised when a simulation does not complete within the configured timeout."""
+
+
+class SimulationTimeoutError(TimeoutError):
     """Raised when a simulation does not complete within the configured timeout."""
 
 

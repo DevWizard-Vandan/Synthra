@@ -54,12 +54,13 @@ def test_database_initialization_and_migrations(db_manager: DatabaseManager) -> 
         assert "schema_migrations" in tables
         assert "rejected_candidates" in tables
         assert "campaign_errors" in tables
+        assert "simulation_logs" in tables
 
         # Verify migration record is present
         cursor = conn.execute("SELECT MAX(version) FROM schema_migrations")
         row = cursor.fetchone()
         assert row is not None
-        assert row[0] == 2
+        assert row[0] == 3
 
 
 def test_campaign_repository_crud(db_manager: DatabaseManager) -> None:

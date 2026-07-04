@@ -107,6 +107,18 @@ class WorldQuantExecutionClient:
             self._json_headers(),
             cast(JsonObject, request.model_dump(mode="json")),
         )
+
+        # Automatic session refresh on 401/403
+        if response.status_code in {401, 403}:
+            logger.info("Session expired/unauthorized. Re-authenticating...")
+            self.authenticate()
+            response = self._request_with_retries(
+                "POST",
+                self._url(self._config.simulations_path),
+                self._json_headers(),
+                cast(JsonObject, request.model_dump(mode="json")),
+            )
+
         if response.status_code not in {200, 201, 202}:
             self._raise_for_status(response)
 
@@ -139,6 +151,18 @@ class WorldQuantExecutionClient:
             self._json_headers(),
             None,
         )
+
+        # Automatic session refresh on 401/403
+        if response.status_code in {401, 403}:
+            logger.info("Session expired/unauthorized. Re-authenticating...")
+            self.authenticate()
+            response = self._request_with_retries(
+                "GET",
+                handle.location,
+                self._json_headers(),
+                None,
+            )
+
         if response.status_code != 200:
             self._raise_for_status(response)
         return response.json_object()
@@ -150,21 +174,43 @@ class WorldQuantExecutionClient:
         headers: Mapping[str, str],
         json_body: JsonObject | None,
     ) -> HttpResponse:
-        """Execute a request with bounded retries for transient platform states."""
+        """Execute a request with bounded retries and exponential backoff."""
         attempts = self._config.max_retries + 1
         for attempt in range(attempts):
-            response = self._transport.request(
-                method=method,
-                url=url,
-                headers=headers,
-                json_body=json_body,
-                timeout_seconds=self._config.timeout_seconds,
+            logger.info(
+                f"API Request: {method} {url} (attempt {attempt + 1}/{attempts})"
             )
-            if response.status_code not in {408, 429, 500, 502, 503, 504}:
+
+            try:
+                response = self._transport.request(
+                    method=method,
+                    url=url,
+                    headers=headers,
+                    json_body=json_body,
+                    timeout_seconds=self._config.timeout_seconds,
+                )
+            except Exception as e:
+                logger.warning(f"Transport exception during API request: {str(e)}")
+                if attempt == attempts - 1:
+                    raise
+                response = HttpResponse(
+                    status_code=599, headers={}, body=str(e).encode()
+                )
+
+            logger.info(f"API Response: {response.status_code} from {method} {url}")
+
+            if response.status_code not in {408, 429, 500, 502, 503, 504, 599}:
                 return response
             if attempt == attempts - 1:
                 return response
-            time.sleep(min(0.25 * (attempt + 1), 1.0))
+
+            # Exponential backoff: 0.5 * 2^attempt seconds
+            backoff = 0.5 * (2**attempt)
+            logger.info(
+                f"Retrying transient status {response.status_code} after {backoff}s..."
+            )
+            time.sleep(backoff)
+
         return response
 
     def _json_headers(self) -> dict[str, str]:
