@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { api, AuthState } from "./api";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchStatus = async (showLoading = false) => {
+  const fetchStatus = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
       const status = await api.authStatus();
@@ -43,15 +43,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchStatus(true);
+    // Avoid synchronous state changes inside the effect by deferring the call
+    const timer = setTimeout(() => {
+      fetchStatus(false);
+    }, 0);
     const interval = setInterval(() => {
       fetchStatus(false);
     }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, [fetchStatus]);
 
   useEffect(() => {
     if (loading) return;
@@ -61,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else if (authenticated && pathname === "/login") {
       router.push("/");
     }
-  }, [authenticated, pathname, loading]);
+  }, [authenticated, pathname, loading, router]);
 
   const login = async (
     username: string,
@@ -90,8 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthenticated(false);
         setUsername(null);
       }
-    } catch (err: any) {
-      toast.error(err.message || "An authentication error occurred");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An authentication error occurred";
+      toast.error(message);
       setState("Logged Out");
       setAuthenticated(false);
       setUsername(null);
@@ -107,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setVerificationUrl(null);
       toast.success("Successfully logged out");
       router.push("/login");
-    } catch (err: any) {
+    } catch {
       toast.error("Logout failed");
     }
   };
