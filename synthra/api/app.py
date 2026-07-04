@@ -2,9 +2,11 @@ import os
 import logging
 import time
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
-from fastapi import FastAPI
+from typing import Any, AsyncGenerator
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from synthra.api.routers import health, status, campaigns, auth
 from synthra.api.state import ServiceState
@@ -12,6 +14,28 @@ from synthra.api.state import ServiceState
 logger = logging.getLogger(__name__)
 
 _START_TIME: float = 0.0
+
+
+class SPAStaticFiles(StaticFiles):
+    """Custom StaticFiles subclass supporting SPA routing fallback to index.html."""
+
+    async def get_response(self, path: str, scope: Any) -> Any:
+        # Check if the path is an API path (normalizing path separators for cross-platform compatibility)
+        clean_path = path.replace("\\", "/").lstrip("/")
+        if clean_path.startswith("api/") or clean_path == "api":
+            raise HTTPException(status_code=404, detail="Not Found")
+
+        try:
+            response = await super().get_response(path, scope)
+            if response.status_code == 404:
+                return FileResponse(os.path.join(self.directory, "index.html"))
+            return response
+        except (HTTPException, StarletteHTTPException) as ex:
+            if ex.status_code == 404:
+                return FileResponse(os.path.join(self.directory, "index.html"))
+            raise ex
+        except Exception:
+            return FileResponse(os.path.join(self.directory, "index.html"))
 
 
 @asynccontextmanager
@@ -47,12 +71,6 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
-    # Root-level router registration (backward compatibility for existing tests)
-    application.include_router(health.router)
-    application.include_router(status.router)
-    application.include_router(campaigns.router)
-    application.include_router(auth.router)
-
     # Prefix-level router registration (production frontend)
     application.include_router(health.router, prefix="/api")
     application.include_router(status.router, prefix="/api")
@@ -68,15 +86,6 @@ def create_app() -> FastAPI:
             "status": "running",
         }
 
-    @application.get("/", tags=["root"])
-    async def root() -> dict[str, str]:
-        """Root endpoint returning service identity."""
-        return {
-            "service": "Synthra",
-            "version": "0.1.0",
-            "status": "running",
-        }
-
     # Mount Next.js static exported HTML
     root_dir = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -84,7 +93,7 @@ def create_app() -> FastAPI:
     frontend_out = os.path.join(root_dir, "frontend", "out")
     if os.path.exists(frontend_out):
         application.mount(
-            "/", StaticFiles(directory=frontend_out, html=True), name="static"
+            "/", SPAStaticFiles(directory=frontend_out, html=True), name="static"
         )
 
     return application

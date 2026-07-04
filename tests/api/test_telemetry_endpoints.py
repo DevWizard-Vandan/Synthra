@@ -112,8 +112,8 @@ def client() -> Generator[TestClient, None, None]:
 
 
 def test_get_metrics(client: TestClient) -> None:
-    """GET /metrics returns the telemetry metrics."""
-    response = client.get("/metrics")
+    """GET /api/metrics returns the telemetry metrics."""
+    response = client.get("/api/metrics")
     assert response.status_code == 200
     metrics = response.json()
     assert metrics["running_workers"] == 2
@@ -122,8 +122,8 @@ def test_get_metrics(client: TestClient) -> None:
 
 
 def test_get_workers(client: TestClient) -> None:
-    """GET /workers returns the status of active worker threads."""
-    response = client.get("/workers")
+    """GET /api/workers returns the status of active worker threads."""
+    response = client.get("/api/workers")
     assert response.status_code == 200
     workers = response.json()
     assert len(workers) == 2
@@ -134,8 +134,8 @@ def test_get_workers(client: TestClient) -> None:
 
 
 def test_get_campaigns(client: TestClient) -> None:
-    """GET /campaigns returns the list of all campaigns with state."""
-    response = client.get("/campaigns")
+    """GET /api/campaigns returns the list of all campaigns with state."""
+    response = client.get("/api/campaigns")
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 1
@@ -145,8 +145,8 @@ def test_get_campaigns(client: TestClient) -> None:
 
 
 def test_get_queue(client: TestClient) -> None:
-    """GET /queue returns campaigns currently in the queue."""
-    response = client.get("/queue")
+    """GET /api/queue returns campaigns currently in the queue."""
+    response = client.get("/api/queue")
     assert response.status_code == 200
     queue = response.json()
     assert len(queue) == 1
@@ -155,8 +155,8 @@ def test_get_queue(client: TestClient) -> None:
 
 
 def test_get_candidates(client: TestClient) -> None:
-    """GET /candidates returns alpha candidates enqueued for submission."""
-    response = client.get("/candidates")
+    """GET /api/candidates returns alpha candidates enqueued for submission."""
+    response = client.get("/api/candidates")
     assert response.status_code == 200
     candidates = response.json()
     assert len(candidates) == 1
@@ -165,8 +165,8 @@ def test_get_candidates(client: TestClient) -> None:
 
 
 def test_get_events(client: TestClient) -> None:
-    """GET /events returns recent events."""
-    response = client.get("/events")
+    """GET /api/events returns recent events."""
+    response = client.get("/api/events")
     assert response.status_code == 200
     events = response.json()
     assert len(events) == 1
@@ -175,8 +175,8 @@ def test_get_events(client: TestClient) -> None:
 
 
 def test_get_system(client: TestClient) -> None:
-    """GET /system returns system stats."""
-    response = client.get("/system")
+    """GET /api/system returns system stats."""
+    response = client.get("/api/system")
     assert response.status_code == 200
     system = response.json()
     assert system["database_backend"] == "sqlite"
@@ -185,8 +185,8 @@ def test_get_system(client: TestClient) -> None:
 
 
 def test_get_governor(client: TestClient) -> None:
-    """GET /governor returns governor stats and configuration."""
-    response = client.get("/governor")
+    """GET /api/governor returns governor stats and configuration."""
+    response = client.get("/api/governor")
     assert response.status_code == 200
     governor = response.json()
     assert governor["status"] == "running"
@@ -195,7 +195,7 @@ def test_get_governor(client: TestClient) -> None:
 
 
 def test_events_stream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    """GET /events/stream returns event-stream media type."""
+    """GET /api/events/stream returns event-stream media type."""
     from typing import Any, AsyncGenerator
     from fastapi import Request
 
@@ -206,6 +206,6 @@ def test_events_stream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> N
 
     monkeypatch.setattr("synthra.api.routers.status.sse_generator", mock_sse_generator)
 
-    with client.stream("GET", "/events/stream") as response:
+    with client.stream("GET", "/api/events/stream") as response:
         assert response.status_code == 200
         assert "text/event-stream" in response.headers["content-type"]

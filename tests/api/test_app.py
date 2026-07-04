@@ -47,8 +47,8 @@ def client() -> Generator[TestClient, None, None]:
 
 
 def test_root_returns_service_identity(client: TestClient) -> None:
-    """GET / returns service name, version, and running status."""
-    response = client.get("/")
+    """GET /api returns service name, version, and running status."""
+    response = client.get("/api")
     assert response.status_code == 200
     body = response.json()
     assert body["service"] == "Synthra"
@@ -62,18 +62,18 @@ def test_root_returns_service_identity(client: TestClient) -> None:
 
 
 def test_health_returns_healthy(client: TestClient) -> None:
-    """GET /health returns status=healthy."""
-    response = client.get("/health")
+    """GET /api/health returns status=healthy."""
+    response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
 
 
 def test_health_is_fast(client: TestClient) -> None:
-    """GET /health must complete without touching state or DB."""
+    """GET /api/health must complete without touching state or DB."""
     import time
 
     start = time.perf_counter()
-    response = client.get("/health")
+    response = client.get("/api/health")
     elapsed = time.perf_counter() - start
 
     assert response.status_code == 200
@@ -87,8 +87,8 @@ def test_health_is_fast(client: TestClient) -> None:
 
 
 def test_status_returns_expected_schema(client: TestClient) -> None:
-    """GET /status returns version, uptime_seconds, and memory sub-object."""
-    response = client.get("/status")
+    """GET /api/status returns version, uptime_seconds, and memory sub-object."""
+    response = client.get("/api/status")
     assert response.status_code == 200
     body = response.json()
 
@@ -108,8 +108,8 @@ def test_status_returns_expected_schema(client: TestClient) -> None:
 
 
 def test_campaigns_list_returns_empty(client: TestClient) -> None:
-    """GET /campaigns returns empty list and zero total."""
-    response = client.get("/campaigns")
+    """GET /api/campaigns returns empty list and total."""
+    response = client.get("/api/campaigns")
     assert response.status_code == 200
     body = response.json()
     assert body["campaigns"] == []
@@ -136,12 +136,12 @@ def test_state_module_importable() -> None:
 
 
 def test_run_campaign_endpoint(client: TestClient) -> None:
-    """POST /campaigns/{campaign_id}/run calls governor.run_campaign."""
+    """POST /api/campaigns/{campaign_id}/run calls governor.run_campaign."""
     from synthra.api.app import ServiceState
 
     mock_state = ServiceState.get_instance()
 
-    response = client.post("/campaigns/CMP-0001/run")
+    response = client.post("/api/campaigns/CMP-0001/run")
     assert response.status_code == 200
     assert response.json() == {
         "status": "success",
@@ -151,13 +151,13 @@ def test_run_campaign_endpoint(client: TestClient) -> None:
 
 
 def test_run_campaign_endpoint_error(client: TestClient) -> None:
-    """POST /campaigns/{campaign_id}/run handles errors properly."""
+    """POST /api/campaigns/{campaign_id}/run handles errors properly."""
     from synthra.api.app import ServiceState
 
     mock_state = ServiceState.get_instance()
     mock_state.governor.run_campaign.side_effect = ValueError("Some campaign error")
 
-    response = client.post("/campaigns/CMP-0001/run")
+    response = client.post("/api/campaigns/CMP-0001/run")
     assert response.status_code == 200
     assert response.json() == {
         "status": "error",

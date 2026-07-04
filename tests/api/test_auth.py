@@ -43,11 +43,11 @@ def client(mock_service_state):
 
 
 def test_login_success(client, mock_service_state):
-    """POST /auth/login returns success on valid credentials."""
+    """POST /api/auth/login returns success on valid credentials."""
     mock_service_state.execution_client.authenticate.return_value = None
 
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"username": "test_user", "password": "test_password", "remember": True},
     )
     assert response.status_code == 200
@@ -64,13 +64,13 @@ def test_login_success(client, mock_service_state):
 
 
 def test_login_invalid_credentials(client, mock_service_state):
-    """POST /auth/login returns error on invalid credentials."""
+    """POST /api/auth/login returns error on invalid credentials."""
     mock_service_state.execution_client.authenticate.side_effect = (
         ExecutionAuthenticationError("Auth failed")
     )
 
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"username": "bad_user", "password": "bad_password", "remember": False},
     )
     assert response.status_code == 200
@@ -84,13 +84,13 @@ def test_login_invalid_credentials(client, mock_service_state):
 
 
 def test_login_verification_required(client, mock_service_state):
-    """POST /auth/login returns verification_required status on MFA."""
+    """POST /api/auth/login returns verification_required status on MFA."""
     mock_service_state.execution_client.authenticate.side_effect = (
         VerificationRequiredError("https://mfa.example.test")
     )
 
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"username": "mfa_user", "password": "mfa_password", "remember": False},
     )
     assert response.status_code == 200
@@ -105,8 +105,8 @@ def test_login_verification_required(client, mock_service_state):
 
 
 def test_status_unauthenticated(client):
-    """GET /auth/status returns unauthenticated when no session exists."""
-    response = client.get("/auth/status")
+    """GET /api/auth/status returns unauthenticated when no session exists."""
+    response = client.get("/api/auth/status")
     assert response.status_code == 200
     assert response.json() == {
         "authenticated": False,
@@ -117,18 +117,18 @@ def test_status_unauthenticated(client):
 
 
 def test_status_authenticated_and_logout(client, mock_service_state):
-    """GET /auth/status returns authenticated and POST /auth/logout clears session."""
+    """GET /api/auth/status returns authenticated and logout clears session."""
     mock_service_state.execution_client.authenticate.return_value = None
 
     # 1. Login to establish session
     login_resp = client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"username": "user1", "password": "pass1", "remember": False},
     )
     assert login_resp.status_code == 200
 
     # 2. Get status with cookie
-    status_resp = client.get("/auth/status")
+    status_resp = client.get("/api/auth/status")
     assert status_resp.status_code == 200
     assert status_resp.json() == {
         "authenticated": True,
@@ -138,12 +138,12 @@ def test_status_authenticated_and_logout(client, mock_service_state):
     }
 
     # 3. Invalidate via logout
-    logout_resp = client.post("/auth/logout")
+    logout_resp = client.post("/api/auth/logout")
     assert logout_resp.status_code == 200
     assert logout_resp.json() == {"status": "success", "message": None}
 
     # Cookie should be deleted
     # 4. Status should now be unauthenticated
-    status_resp_after = client.get("/auth/status")
+    status_resp_after = client.get("/api/auth/status")
     assert status_resp_after.status_code == 200
     assert status_resp_after.json()["authenticated"] is False
