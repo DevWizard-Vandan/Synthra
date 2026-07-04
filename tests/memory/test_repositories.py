@@ -52,12 +52,14 @@ def test_database_initialization_and_migrations(db_manager: DatabaseManager) -> 
         assert "alpha_candidates" in tables
         assert "research_assets" in tables
         assert "schema_migrations" in tables
+        assert "rejected_candidates" in tables
+        assert "campaign_errors" in tables
 
         # Verify migration record is present
-        cursor = conn.execute("SELECT version FROM schema_migrations")
+        cursor = conn.execute("SELECT MAX(version) FROM schema_migrations")
         row = cursor.fetchone()
         assert row is not None
-        assert row["version"] == 1
+        assert row[0] == 2
 
 
 def test_campaign_repository_crud(db_manager: DatabaseManager) -> None:
@@ -360,3 +362,64 @@ def test_transaction_rollback_on_failure(db_manager: DatabaseManager) -> None:
     with db_manager.connection() as conn:
         repo = CampaignRepository(conn)
         assert repo.get_by_id("CMP-0001") is None
+
+
+def test_history_tracker_rejections_and_errors(db_manager: DatabaseManager) -> None:
+    """Verify that HistoryTracker records rejected candidates and errors correctly."""
+    from synthra.learning.history import HistoryTracker
+
+    tracker = HistoryTracker(db_manager)
+
+    campaign = Campaign(
+        id="CMP-0001",
+        name="Trend Following Research",
+        region=Region.US,
+        universe=Universe.TOP3000,
+        budget_limit=1000.0,
+    )
+    hypothesis = Hypothesis(
+        id="HYP-0001",
+        campaign_id="CMP-0001",
+        rationale="Economic rationale here",
+        target_variable="return",
+        datasets=["pv"],
+        operators=["ts_mean"],
+    )
+
+    with db_manager.transaction() as conn:
+        CampaignRepository(conn).save(campaign)
+        HypothesisRepository(conn).save(hypothesis)
+
+    # 1. Test record_rejected_candidate
+    tracker.record_rejected_candidate(
+        candidate_id="AST-9999",
+        campaign_id="CMP-0001",
+        hypothesis_id="HYP-0001",
+        expression="ts_mean(close, 20)",
+        reason="failed novelty check",
+        metrics={"sharpe": 0.5},
+    )
+
+    with db_manager.connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM rejected_candidates WHERE id = ?", ("AST-9999",)
+        ).fetchone()
+        assert row is not None
+        assert row["expression"] == "ts_mean(close, 20)"
+        assert row["reason"] == "failed novelty check"
+        assert "sharpe" in row["metrics"]
+
+    # 2. Test record_error
+    tracker.record_error(
+        campaign_id="CMP-0001",
+        error_type="some_error",
+        message="A test error message",
+    )
+
+    with db_manager.connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM campaign_errors WHERE campaign_id = ?", ("CMP-0001",)
+        ).fetchone()
+        assert row is not None
+        assert row["error_type"] == "some_error"
+        assert row["message"] == "A test error message"

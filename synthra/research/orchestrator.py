@@ -195,7 +195,11 @@ class ResearchOrchestrator:
 
                             # Mutate to generate improved variants
                             mutated_reqs = self.mutation_engine.mutate_request(
-                                req, result, dataset_name
+                                req,
+                                result,
+                                dataset_name,
+                                campaign_id=campaign.id,
+                                hypothesis_id=hyp.id,
                             )
 
                             # Limit mutation count based on evaluation decision

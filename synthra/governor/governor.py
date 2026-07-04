@@ -4,12 +4,13 @@ from typing import Optional
 
 from synthra.core.domain import Campaign
 from synthra.governor.events import CampaignEventBus, GovernorStarted, GovernorStopped
+from synthra.governor.exceptions import CampaignNotFoundError
 from synthra.governor.queue import CampaignQueue
 from synthra.governor.scheduler import CampaignScheduler
 from synthra.governor.state import CampaignState
 from synthra.governor.tracker import CampaignProgress, CampaignProgressTracker
 from synthra.governor.telemetry import TelemetryManager
-from synthra.memory import DatabaseManager
+from synthra.memory import CampaignRepository, DatabaseManager
 from synthra.research.orchestrator import ResearchOrchestrator
 
 
@@ -81,3 +82,14 @@ class Governor:
     def get_campaign_progress(self, campaign_id: str) -> Optional[CampaignProgress]:
         """Retrieve current campaign progress metrics."""
         return self.progress_tracker.get_progress(campaign_id)
+
+    def run_campaign(self, campaign_id: str, priority: int = 0) -> None:
+        """Load an existing campaign from the database and enqueue it.
+
+        Enqueues the retrieved campaign for autonomous execution.
+        """
+        with self.db_manager.connection() as conn:
+            campaign = CampaignRepository(conn).get_by_id(campaign_id)
+        if not campaign:
+            raise CampaignNotFoundError(f"Campaign with ID {campaign_id} not found")
+        self.enqueue_campaign(campaign, priority)

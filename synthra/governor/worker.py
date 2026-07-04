@@ -117,6 +117,12 @@ class CampaignWorker(Thread):
                         campaign.id,
                         e,
                     )
+                    if self.orchestrator.history_tracker:
+                        self.orchestrator.history_tracker.record_error(
+                            campaign_id=campaign.id,
+                            error_type="campaign_execution_failed",
+                            message=str(e),
+                        )
                     self._conclude_campaign(campaign.id, CampaignState.FAILED)
 
                 self.event_bus.publish(
@@ -238,6 +244,12 @@ class CampaignWorker(Thread):
                     campaign_id,
                     e,
                 )
+                if self.orchestrator.history_tracker:
+                    self.orchestrator.history_tracker.record_error(
+                        campaign_id=campaign_id,
+                        error_type="hypothesis_generation_failed",
+                        message=str(e),
+                    )
                 continue
 
             # 4. Generate candidate expressions for each dataset
@@ -256,6 +268,12 @@ class CampaignWorker(Thread):
                     )
                 except Exception as e:
                     logger.error("Failed to generate expressions: %s", e)
+                    if self.orchestrator.history_tracker:
+                        self.orchestrator.history_tracker.record_error(
+                            campaign_id=campaign_id,
+                            error_type="expression_generation_failed",
+                            message=str(e),
+                        )
                     continue
 
                 # Run generation loop
@@ -366,6 +384,17 @@ class CampaignWorker(Thread):
                                     reason="failed novelty check",
                                 )
                             )
+                            if self.orchestrator.history_tracker:
+                                rej_id = f"REJ-{cand_counter:04d}"
+                                cand_counter += 1
+                                tracker = self.orchestrator.history_tracker
+                                tracker.record_rejected_candidate(
+                                    candidate_id=rej_id,
+                                    campaign_id=campaign_id,
+                                    hypothesis_id=hyp.id,
+                                    expression=req.expression,
+                                    reason="failed novelty check",
+                                )
                             continue
 
                         self.novelty_detector.add_expression(req.expression)
@@ -525,6 +554,23 @@ class CampaignWorker(Thread):
                                     campaign_id, approved_candidates=app_cands
                                 )
 
+                                # Record approved candidate to database
+                                if self.orchestrator.history_tracker:
+                                    from synthra.core.domain import AlphaCandidate
+
+                                    cand = AlphaCandidate(
+                                        id=cand_id,
+                                        experiment_id=exp_id,
+                                        hypothesis_id=hyp.id,
+                                        campaign_id=campaign_id,
+                                        expression=req.expression,
+                                        result=result,
+                                        is_submitted=False,
+                                    )
+                                    self.orchestrator.history_tracker.record_candidate(
+                                        cand
+                                    )
+
                                 # Candidate Queue Integration
                                 lineage_dict = None
                                 generation_num = 0
@@ -558,6 +604,28 @@ class CampaignWorker(Thread):
                                         expression=req.expression,
                                     )
                                 )
+                            else:
+                                # Sharpe < 1.0 candidate rejection
+                                self.event_bus.publish(
+                                    CandidateRejected(
+                                        campaign_id=campaign_id,
+                                        expression=req.expression,
+                                        reason="failed Sharpe threshold (Sharpe < 1.0)",
+                                    )
+                                )
+                                if self.orchestrator.history_tracker:
+                                    tracker = self.orchestrator.history_tracker
+                                    tracker.record_rejected_candidate(
+                                        candidate_id=cand_id,
+                                        campaign_id=campaign_id,
+                                        hypothesis_id=hyp.id,
+                                        expression=req.expression,
+                                        reason=(
+                                            f"failed Sharpe threshold "
+                                            f"(Sharpe={result.sharpe:.4f} < 1.0)"
+                                        ),
+                                        metrics=result.model_dump(mode="json"),
+                                    )
 
                         except Exception as e:
                             # Update experiment to failed
@@ -566,10 +634,16 @@ class CampaignWorker(Thread):
                                     update={
                                         "status": ExperimentStatus.FAILED,
                                         "finished_at": datetime.utcnow(),
+                                        "error_message": str(e),
                                     }
                                 )
                                 self.orchestrator.history_tracker.record_experiment(
                                     failed_exp
+                                )
+                                self.orchestrator.history_tracker.record_error(
+                                    campaign_id=campaign_id,
+                                    error_type="simulation_failed",
+                                    message=str(e),
                                 )
 
                             logger.error(
@@ -622,29 +696,34 @@ class CampaignWorker(Thread):
                             )
                             mutations = (
                                 self.orchestrator.mutation_engine.mutate_request(
-                                    parent_req, parent_res, dataset_name
+                                    parent_req,
+                                    parent_res,
+                                    dataset_name,
+                                    campaign_id=campaign_id,
+                                    hypothesis_id=hyp.id,
                                 )
                             )
                             for mut_req in mutations:
-                                mut_type = "parameter_tuning"
-                                tracker = (
-                                    self.orchestrator.mutation_engine.lineage_tracker
-                                )
-                                if tracker:
-                                    node = tracker.get_node(mut_req.expression)
-                                    if node:
-                                        mut_type = (
-                                            node.mutation_type or "parameter_tuning"
-                                        )
+                                validator = self.orchestrator.validator
+                                if validator.validate_request(mut_req, dataset_name):
+                                    mut_type = "parameter_tuning"
+                                    engine = self.orchestrator.mutation_engine
+                                    tracker = engine.lineage_tracker if engine else None
+                                    if tracker:
+                                        node = tracker.get_node(mut_req.expression)
+                                        if node:
+                                            mut_type = (
+                                                node.mutation_type or "parameter_tuning"
+                                            )
 
-                                self.event_bus.publish(
-                                    MutationCreated(
-                                        campaign_id=campaign_id,
-                                        expression=mut_req.expression,
-                                        mutation_type=mut_type,
+                                    self.event_bus.publish(
+                                        MutationCreated(
+                                            campaign_id=campaign_id,
+                                            expression=mut_req.expression,
+                                            mutation_type=mut_type,
+                                        )
                                     )
-                                )
-                                next_requests.append(mut_req)
+                                    next_requests.append(mut_req)
 
                     generation += 1
                     current_requests = next_requests[

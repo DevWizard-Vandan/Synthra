@@ -408,3 +408,43 @@ def test_governor_autonomous_loop(
 
     finally:
         gov.stop()
+
+
+def test_governor_run_campaign_success(db_manager: DatabaseManager) -> None:
+    """Verify Governor.run_campaign enqueues a campaign retrieved from the DB."""
+    # 1. Setup mock orchestrator
+    orch = MagicMock(spec=ResearchOrchestrator)
+    gov = Governor(orchestrator=orch, db_manager=db_manager, num_workers=1)
+
+    campaign = Campaign(
+        id="CMP-0001",
+        name="Trend following",
+        region=Region.US,
+        universe=Universe.TOP2000,
+        budget_limit=100.0,
+        status=CampaignStatus.ACTIVE,
+        created_at=datetime.utcnow(),
+    )
+
+    with db_manager.transaction() as conn:
+        CampaignRepository(conn).save(campaign)
+
+    # Mock enqueue_campaign
+    gov.enqueue_campaign = MagicMock()
+
+    # Call run_campaign
+    gov.run_campaign("CMP-0001", priority=10)
+
+    # Assert enqueue_campaign was called with the retrieved campaign
+    gov.enqueue_campaign.assert_called_once_with(campaign, 10)
+
+
+def test_governor_run_campaign_not_found(db_manager: DatabaseManager) -> None:
+    """Verify run_campaign raises CampaignNotFoundError if campaign is missing."""
+    from synthra.governor.exceptions import CampaignNotFoundError
+
+    orch = MagicMock(spec=ResearchOrchestrator)
+    gov = Governor(orchestrator=orch, db_manager=db_manager, num_workers=1)
+
+    with pytest.raises(CampaignNotFoundError):
+        gov.run_campaign("CMP-9999")

@@ -52,6 +52,8 @@ class MutationEngine:
         request: SimulationRequest,
         result: SimulationResult,
         dataset_name: str,
+        campaign_id: str = "default",
+        hypothesis_id: str = "default",
     ) -> List[SimulationRequest]:
         """Generate improved/altered variants of a simulation request.
 
@@ -60,10 +62,6 @@ class MutationEngine:
         """
         mutated_requests: List[SimulationRequest] = []
         expression = request.expression
-
-        # Get parent IDs to associate lineage nodes (default placeholders)
-        campaign_id = getattr(request, "campaign_id", "default")
-        hypothesis_id = getattr(request, "hypothesis_id", "default")
 
         # 1. Parameter / Window / Lookback mutations
         numbers = re.findall(r"\b\d+\b", expression)

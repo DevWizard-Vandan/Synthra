@@ -19,6 +19,7 @@ def _make_mock_state() -> MagicMock:
     state.simulations_executed.return_value = 0
     state.initialize = AsyncMock()
     state.shutdown = AsyncMock()
+    state.governor = MagicMock()
     return state
 
 
@@ -132,3 +133,33 @@ def test_state_module_importable() -> None:
     from synthra.api.state import ServiceState  # noqa: F401
 
     assert ServiceState is not None
+
+
+def test_run_campaign_endpoint(client: TestClient) -> None:
+    """POST /campaigns/{campaign_id}/run calls governor.run_campaign."""
+    from synthra.api.app import ServiceState
+
+    mock_state = ServiceState.get_instance()
+
+    response = client.post("/campaigns/CMP-0001/run")
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "success",
+        "message": "Campaign CMP-0001 queued for execution",
+    }
+    mock_state.governor.run_campaign.assert_called_once_with("CMP-0001")
+
+
+def test_run_campaign_endpoint_error(client: TestClient) -> None:
+    """POST /campaigns/{campaign_id}/run handles errors properly."""
+    from synthra.api.app import ServiceState
+
+    mock_state = ServiceState.get_instance()
+    mock_state.governor.run_campaign.side_effect = ValueError("Some campaign error")
+
+    response = client.post("/campaigns/CMP-0001/run")
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "error",
+        "message": "Some campaign error",
+    }

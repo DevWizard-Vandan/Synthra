@@ -78,7 +78,33 @@ MIGRATIONS = [
             FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE
         );
         """,
-    ]
+    ],
+    # Version 2: Added rejected_candidates and campaign_errors tables
+    [
+        """
+        CREATE TABLE rejected_candidates (
+            id TEXT PRIMARY KEY,
+            campaign_id TEXT NOT NULL,
+            hypothesis_id TEXT NOT NULL,
+            expression TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            metrics TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE,
+            FOREIGN KEY (hypothesis_id) REFERENCES hypotheses (id) ON DELETE CASCADE
+        );
+        """,
+        """
+        CREATE TABLE campaign_errors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            campaign_id TEXT NOT NULL,
+            error_type TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE
+        );
+        """,
+    ],
 ]
 
 

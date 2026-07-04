@@ -1,6 +1,6 @@
 """Campaigns router — listing and details about campaigns."""
 
-from typing import List
+from typing import Any, List
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
@@ -63,3 +63,20 @@ async def list_campaigns(request: Request) -> CampaignsListResponse:
                 )
             )
     return CampaignsListResponse(campaigns=campaigns, total=len(campaigns))
+
+
+@router.post("/{campaign_id}/run")
+async def run_campaign_endpoint(campaign_id: str, request: Request) -> dict[str, Any]:
+    """Trigger autonomous execution for a campaign."""
+    service = getattr(request.app.state, "service", None)
+    if not service or not service.governor:
+        return {"status": "error", "message": "Governor service not initialized"}
+
+    try:
+        service.governor.run_campaign(campaign_id)
+        return {
+            "status": "success",
+            "message": f"Campaign {campaign_id} queued for execution",
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
