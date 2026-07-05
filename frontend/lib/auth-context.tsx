@@ -65,9 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Use hard navigation to avoid Next.js App Router static export RSC payload issues
     // which can cause infinite soft/hard reload loops.
     if (!authenticated && pathname !== "/login") {
-      window.location.href = "/login";
+      router.replace("/login");
     } else if (authenticated && pathname === "/login") {
-      window.location.href = "/";
+      router.replace("/");
     }
   }, [authenticated, pathname, loading]);
 
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState("Logged Out");
       setVerificationUrl(null);
       toast.success("Successfully logged out");
-      window.location.href = "/login";
+      router.replace("/login");
     } catch {
       toast.error("Logout failed");
     }
