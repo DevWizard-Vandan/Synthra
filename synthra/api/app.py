@@ -28,10 +28,16 @@ class SPAStaticFiles(StaticFiles):
         try:
             response = await super().get_response(path, scope)
             if response.status_code == 404:
+                html_path = os.path.join(self.directory, path + ".html")
+                if os.path.isfile(html_path):
+                    return FileResponse(html_path)
                 return FileResponse(os.path.join(self.directory, "index.html"))
             return response
         except (HTTPException, StarletteHTTPException) as ex:
             if ex.status_code == 404:
+                html_path = os.path.join(self.directory, path + ".html")
+                if os.path.isfile(html_path):
+                    return FileResponse(html_path)
                 return FileResponse(os.path.join(self.directory, "index.html"))
             raise ex
         except Exception:
