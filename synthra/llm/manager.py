@@ -54,17 +54,17 @@ class ProviderManager:
 
             # Fallback to standard environment key
             if not api_key:
-                if normalized_name == "openai":
+                if "openai" in normalized_name:
                     api_key = os.environ.get("OPENAI_API_KEY")
-                elif normalized_name == "anthropic":
+                elif "anthropic" in normalized_name or "claude" in normalized_name:
                     api_key = os.environ.get("ANTHROPIC_API_KEY")
-                elif normalized_name in ("google", "gemini"):
+                elif "google" in normalized_name or "gemini" in normalized_name:
                     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-                elif normalized_name == "nvidia":
+                elif "nvidia" in normalized_name:
                     api_key = os.environ.get("NVIDIA_API_KEY")
-                elif normalized_name == "deepseek":
+                elif "deepseek" in normalized_name:
                     api_key = os.environ.get("DEEPSEEK_API_KEY")
-                elif normalized_name == "openrouter":
+                elif "openrouter" in normalized_name:
                     api_key = os.environ.get("OPENROUTER_API_KEY")
 
             # Fallback to config file
@@ -78,35 +78,35 @@ class ProviderManager:
             try:
                 provider: Optional[LLMProvider] = None
 
-                if normalized_name in ("openai", "nvidia", "deepseek", "glm", "kimi"):
+                if any(x in normalized_name for x in ("openai", "nvidia", "deepseek", "glm", "kimi")):
                     provider = OpenAIProvider(
                         api_key=api_key or "",
                         model=p_config.model,
                         api_base=p_config.api_base or "https://api.openai.com/v1",
                         timeout_seconds=p_config.timeout_seconds,
                     )
-                elif normalized_name == "anthropic":
+                elif "anthropic" in normalized_name or "claude" in normalized_name:
                     provider = AnthropicProvider(
                         api_key=api_key or "",
                         model=p_config.model,
                         api_base=p_config.api_base,
                         timeout_seconds=p_config.timeout_seconds,
                     )
-                elif normalized_name in ("google", "gemini"):
+                elif "google" in normalized_name or "gemini" in normalized_name:
                     provider = GoogleProvider(
                         api_key=api_key or "",
                         model=p_config.model,
                         api_base=p_config.api_base,
                         timeout_seconds=p_config.timeout_seconds,
                     )
-                elif normalized_name == "openrouter":
+                elif "openrouter" in normalized_name:
                     provider = OpenRouterProvider(
                         api_key=api_key or "",
                         model=p_config.model,
                         api_base=p_config.api_base or "https://openrouter.ai/api/v1",
                         timeout_seconds=p_config.timeout_seconds,
                     )
-                elif normalized_name == "ollama":
+                elif "ollama" in normalized_name:
                     provider = OllamaProvider(
                         model=p_config.model,
                         api_base=p_config.api_base,
@@ -147,21 +147,20 @@ class ProviderManager:
         if not self._providers:
             return []
 
-        # Best-to-worst priority list
+        # Best-to-worst priority list matching user specific models
         PRIORITY = [
-            "sonnet",
-            "claude-3-5",
-            "haiku",
-            "gpt-5",
-            "gpt-4",
-            "gemini-3.5",
-            "gemini-3.1",
-            "gemini-2.5",
-            "gemini-1.5",
-            "nemotron",
-            "glm",
-            "kimi",
-            "deepseek",
+            "claude-3-5-sonnet",      # 1. Claude Sonnet 5
+            "claude-3-5-haiku",       # 2. Claude Haiku
+            "gpt-4o",                 # 3. ChatGPT 5.5 / 4o
+            "gemini-3.5-flash",       # 4. Gemini 3.5 Flash
+            "gemini-3.1-pro",         # 5. Gemini 3.1 Pro
+            "gemini-2.5-flash-lite",  # 6. Gemini 2.5 Flash Lite
+            "gemini-2.5-flash",       # 7. Gemini 2.5 Flash
+            "gemini-3.1-flash-lite",  # 8. Gemini 3.1 Flash Lite
+            "nemotron",               # 9. Nemotron 3 Ultra
+            "glm",                    # 10. GLM 5.2
+            "moonshot",               # 11. Kimi K2.6
+            "deepseek",               # 12. Deepseek
         ]
 
         active_list = list(self._providers.values())
