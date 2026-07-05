@@ -82,6 +82,10 @@ class WorldQuantExecutionClient:
         print(f"DEBUG_WQ_AUTH_BODY: {response.body.decode('utf-8', errors='ignore')}", flush=True)
 
         verification_url = payload.get("verification_url") or payload.get("mfa_url")
+        inquiry_id = payload.get("inquiry")
+        if isinstance(inquiry_id, str) and inquiry_id.startswith("inq_"):
+            verification_url = f"https://inquiry.withpersona.com/verify?inquiry-id={inquiry_id}"
+
         if isinstance(verification_url, str) and verification_url:
             raise VerificationRequiredError(verification_url)
 
