@@ -78,6 +78,9 @@ class WorldQuantExecutionClient:
         except Exception:
             pass
 
+        logger.info(f"WorldQuant Auth Status: {response.status_code}")
+        logger.info(f"WorldQuant Auth Body: {response.body.decode('utf-8', errors='ignore')}")
+
         verification_url = payload.get("verification_url") or payload.get("mfa_url")
         if isinstance(verification_url, str) and verification_url:
             raise VerificationRequiredError(verification_url)
