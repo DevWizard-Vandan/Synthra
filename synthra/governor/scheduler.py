@@ -13,6 +13,7 @@ from synthra.governor.state import CampaignState, validate_transition
 from synthra.governor.tracker import CampaignProgressTracker
 from synthra.governor.worker import CampaignWorker
 from synthra.governor.submission import SubmissionQueue
+from synthra.governor.submission_worker import SubmissionWorker
 from synthra.memory import CampaignRepository, DatabaseManager
 from synthra.research.orchestrator import ResearchOrchestrator
 
@@ -45,6 +46,7 @@ class CampaignScheduler:
         self.submission_queue = SubmissionQueue(db_manager)
 
         self._workers: List[CampaignWorker] = []
+        self._submission_worker: Optional[SubmissionWorker] = None
         self._lock = Lock()
         self._running = False
 
@@ -99,6 +101,15 @@ class CampaignScheduler:
                 worker.start()
                 self._workers.append(worker)
 
+            # Start submission worker
+            self._submission_worker = SubmissionWorker(
+                submission_queue=self.submission_queue,
+                orchestrator=self.orchestrator,
+                db_manager=self.db_manager,
+                event_bus=self.event_bus,
+            )
+            self._submission_worker.start()
+
             # Start retry check monitor
             self._monitor_thread = Thread(target=self._monitor_loop, daemon=True)
             self._monitor_thread.start()
@@ -115,9 +126,18 @@ class CampaignScheduler:
             for worker in self._workers:
                 worker.stop()
 
+            # Signal submission worker to stop
+            if self._submission_worker:
+                self._submission_worker.stop()
+
             # Wait for workers to finish
             for worker in self._workers:
                 worker.join(timeout=1.0)
+
+            # Wait for submission worker to finish
+            if self._submission_worker:
+                self._submission_worker.join(timeout=1.0)
+                self._submission_worker = None
 
             self._workers = []
             logger.info("CampaignScheduler stopped")

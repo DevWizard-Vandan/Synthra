@@ -160,6 +160,22 @@ class CandidateAccepted(CampaignEvent):
     sharpe: float
 
 
+class CandidateSubmitted(CampaignEvent):
+    """Broadcasted when a candidate has been successfully submitted to WorldQuant."""
+
+    candidate_id: str
+    expression: str
+    simulation_id: str
+
+
+class CandidateSubmissionFailed(CampaignEvent):
+    """Broadcasted when a candidate submission fails."""
+
+    candidate_id: str
+    expression: str
+    error_message: str
+
+
 class WorkerIdle(Event):
     """Broadcasted when a worker is idle and waiting for a job."""
 

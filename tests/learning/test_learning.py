@@ -413,3 +413,93 @@ def test_orchestrator_learning_integration(
     # Ensure history tracker recorded entities
     assert campaign_repo.get_by_id("CMP-0001") is not None
     assert len(learning_repo.get_all_records()) > 0
+
+
+def test_scorer_operator_dataset_mutation_ranking(db_manager: DatabaseManager) -> None:
+    """Verify operator, dataset, and mutation scoring and mutation ranking logic."""
+    from synthra.learning import ExpressionScorer, LearningRecord
+    from synthra.learning.repository import LearningRepository
+    from synthra.research.evolution.lineage import LineageTracker
+
+    # Ensure expression_lineages table exists
+    LineageTracker(db_manager)
+
+    # Pre-populate database with some learning records
+    repo = LearningRepository(db_manager)
+    rec1 = LearningRecord(
+        expression="ts_mean(close, 20)",
+        datasets=["market_data"],
+        operators=["ts_mean"],
+        delay=1,
+        neutralization="SUBINDUSTRY",
+        universe="TOP2000",
+        region="US",
+        sharpe=1.8,
+        fitness=2.2,
+        margin=0.08,
+        turnover=0.04,
+        coverage=0.98,
+        success=True,
+    )
+    rec2 = LearningRecord(
+        expression="delay(open, 5)",
+        datasets=["fundamental_data"],
+        operators=["delay"],
+        delay=1,
+        neutralization="SUBINDUSTRY",
+        universe="TOP2000",
+        region="US",
+        sharpe=0.5,
+        fitness=0.8,
+        margin=0.02,
+        turnover=0.1,
+        coverage=0.9,
+        success=False,
+    )
+    repo.add_record(rec1)
+    repo.add_record(rec2)
+
+    # Pre-populate lineage and simulation logs to test mutation scores
+    with db_manager.transaction() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO expression_lineages (
+                expression, parent_id, generation, mutation_type, campaign_id, hypothesis_id, origin
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("ts_mean(close, 20)", "parent", 1, "operator_replacement", "CMP-0001", "HYP-0001", "mutated")
+        )
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO expression_lineages (
+                expression, parent_id, generation, mutation_type, campaign_id, hypothesis_id, origin
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("delay(open, 5)", "parent", 1, "parameter_tuning", "CMP-0001", "HYP-0001", "mutated")
+        )
+
+    scorer = ExpressionScorer(db_manager=db_manager)
+
+    # Check scores
+    assert scorer.get_operator_score("ts_mean") == 1.8
+    assert scorer.get_operator_score("delay") == 0.5
+    assert scorer.get_dataset_score("market_data") == 1.8
+    assert scorer.get_dataset_score("fundamental_data") == 0.5
+    assert scorer.get_mutation_score("operator_replacement") == 1.8
+    assert scorer.get_mutation_score("parameter_tuning") == 0.5
+
+    # Check ranking
+    req1 = SimulationRequest(
+        expression="ts_mean(close, 20)",
+        region=Region.US,
+        universe=Universe.TOP2000,
+    )
+    req2 = SimulationRequest(
+        expression="delay(open, 5)",
+        region=Region.US,
+        universe=Universe.TOP2000,
+    )
+
+    ranked = scorer.rank_mutations([req2, req1], dataset_name="market_data", operators=["ts_mean"])
+    # req1 should be ranked higher than req2 because of superior dataset/operator/mutation scores
+    assert ranked[0].expression == "ts_mean(close, 20)"

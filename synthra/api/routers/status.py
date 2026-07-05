@@ -186,6 +186,91 @@ async def metrics(request: Request) -> Dict[str, Any]:
     if not service or not service.governor:
         return {}
     metrics_dict: Dict[str, Any] = service.governor.telemetry.get_metrics()
+
+    db_manager = service.governor.db_manager
+    db_metrics = {}
+    try:
+        with db_manager.connection() as conn:
+            # 1. Performance stats
+            row = conn.execute(
+                "SELECT AVG(sharpe), AVG(fitness), AVG(margin), AVG(turnover), AVG(coverage) FROM learning_records"
+            ).fetchone()
+            if row:
+                db_metrics["avg_sharpe"] = round(row[0], 4) if row[0] is not None else 0.0
+                db_metrics["avg_fitness"] = round(row[1], 4) if row[1] is not None else 0.0
+                db_metrics["avg_margin"] = round(row[2], 4) if row[2] is not None else 0.0
+                db_metrics["avg_turnover"] = round(row[3], 4) if row[3] is not None else 0.0
+                db_metrics["avg_coverage"] = round(row[4], 4) if row[4] is not None else 0.0
+
+            # 2. Best Sharpe ever
+            row = conn.execute("SELECT MAX(sharpe) FROM learning_records").fetchone()
+            db_metrics["best_sharpe_ever"] = round(row[0], 4) if row and row[0] is not None else 0.0
+
+            # 3. Best Sharpe today
+            row = conn.execute(
+                "SELECT MAX(sharpe) FROM learning_records WHERE date(created_at) = date('now')"
+            ).fetchone()
+            db_metrics["best_sharpe_today"] = round(row[0], 4) if row and row[0] is not None else 0.0
+
+            # 4. Total expressions & acceptance rate
+            total_sims_row = conn.execute("SELECT COUNT(*) FROM simulation_logs WHERE status = 'completed'").fetchone()
+            total_sims = total_sims_row[0] if total_sims_row else 0
+            candidates_row = conn.execute("SELECT COUNT(*) FROM alpha_candidates").fetchone()
+            total_candidates = candidates_row[0] if candidates_row else 0
+            
+            db_metrics["acceptance_rate"] = (
+                round(total_candidates / total_sims, 4) if total_sims > 0 else 0.0
+            )
+
+            # 5. Last hypothesis
+            row = conn.execute("SELECT rationale, target_variable FROM hypotheses ORDER BY created_at DESC LIMIT 1").fetchone()
+            if row:
+                db_metrics["current_hypothesis_rationale"] = row[0]
+                db_metrics["current_hypothesis_target"] = row[1]
+            else:
+                db_metrics["current_hypothesis_rationale"] = "Generating first research campaign hypothesis..."
+                db_metrics["current_hypothesis_target"] = "None"
+
+            # 6. Max evolution generation
+            row = conn.execute("SELECT MAX(generation) FROM expression_lineages").fetchone()
+            db_metrics["max_generation"] = row[0] if row and row[0] is not None else 0
+
+            # 7. Mutation stats
+            rows = conn.execute("SELECT mutation_type, COUNT(*) FROM expression_lineages GROUP BY mutation_type").fetchall()
+            mutation_stats = {r[0]: r[1] for r in rows if r[0]}
+            db_metrics["mutation_stats"] = mutation_stats
+
+            # 8. Operator & Dataset usage
+            import json
+            rows = conn.execute("SELECT operators, datasets FROM learning_records").fetchall()
+            op_counts = {}
+            ds_counts = {}
+            for r in rows:
+                try:
+                    ops = json.loads(r[0])
+                    for op in ops:
+                        op_counts[op] = op_counts.get(op, 0) + 1
+                except Exception:
+                    pass
+                try:
+                    ds = json.loads(r[1])
+                    for d in ds:
+                        ds_counts[d] = ds_counts.get(d, 0) + 1
+                except Exception:
+                    pass
+            db_metrics["operator_usage"] = op_counts
+            db_metrics["dataset_usage"] = ds_counts
+            
+            # 9. Submitted today
+            row = conn.execute(
+                "SELECT COUNT(*) FROM alpha_candidates WHERE is_submitted = 1 AND date(submitted_at) = date('now')"
+            ).fetchone()
+            db_metrics["submitted_today"] = row[0] if row else 0
+
+    except Exception as e:
+        db_metrics["db_metrics_error"] = str(e)
+
+    metrics_dict.update(db_metrics)
     return metrics_dict
 
 

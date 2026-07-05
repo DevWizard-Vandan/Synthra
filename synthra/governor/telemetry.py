@@ -14,6 +14,8 @@ from synthra.governor.events import (
     MutationCreated,
     CandidateAccepted,
     CandidateRejected,
+    CandidateSubmitted,
+    CandidateSubmissionFailed,
     Event,
 )
 
@@ -38,6 +40,8 @@ class TelemetryManager:
         self.accepted_candidates: int = 0
         self.rejected_candidates: int = 0
         self.mutations_generated: int = 0
+        self.submitted_candidates: int = 0
+        self.failed_submissions: int = 0
 
         # Simulation duration tracking
         self._active_simulations: Dict[str, float] = {}  # key -> start_time
@@ -89,6 +93,10 @@ class TelemetryManager:
                 self.accepted_candidates += 1
             elif isinstance(event, CandidateRejected):
                 self.rejected_candidates += 1
+            elif isinstance(event, CandidateSubmitted):
+                self.submitted_candidates += 1
+            elif isinstance(event, CandidateSubmissionFailed):
+                self.failed_submissions += 1
 
     @property
     def average_simulation_time(self) -> float:
@@ -129,6 +137,8 @@ class TelemetryManager:
                 "accepted_candidates": self.accepted_candidates,
                 "rejected_candidates": self.rejected_candidates,
                 "mutations_generated": self.mutations_generated,
+                "submitted_candidates": self.submitted_candidates,
+                "failed_submissions": self.failed_submissions,
                 "average_simulation_time": self.average_simulation_time,
                 "uptime": self.uptime,
             }

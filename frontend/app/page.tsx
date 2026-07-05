@@ -328,17 +328,21 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {Object.entries(metrics)
-                .slice(0, 8)
+                .slice(0, 40)
                 .map(([key, val]) => (
                   <div
                     key={key}
                     className="flex items-center justify-between py-1 border-b border-subtle last:border-0"
                   >
-                    <span className="text-xs text-muted font-mono">
+                    <span className="text-xs text-muted font-mono capitalize">
                       {key.replace(/_/g, " ")}
                     </span>
                     <span className="text-xs font-semibold text-foreground">
-                      {String(val)}
+                      {typeof val === "object" && val !== null
+                        ? Object.entries(val)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(", ")
+                        : String(val)}
                     </span>
                   </div>
                 ))}

@@ -28,6 +28,8 @@ from synthra.governor.events import (
     WorkerBusy,
     GovernorStarted,
     GovernorStopped,
+    CandidateSubmitted,
+    CandidateSubmissionFailed,
 )
 from synthra.governor.exceptions import (
     CampaignNotFoundError,
@@ -41,12 +43,14 @@ from synthra.governor.state import CampaignState, validate_transition
 from synthra.governor.tracker import CampaignProgress, CampaignProgressTracker
 from synthra.governor.worker import CampaignWorker
 from synthra.governor.submission import SubmissionQueue, QueuedCandidate
+from synthra.governor.submission_worker import SubmissionWorker
 from synthra.governor.telemetry import TelemetryManager
 
 __all__ = [
     "Governor",
     "CampaignScheduler",
     "CampaignWorker",
+    "SubmissionWorker",
     "CampaignProgressTracker",
     "CampaignProgress",
     "CampaignEventBus",
@@ -84,5 +88,7 @@ __all__ = [
     "WorkerBusy",
     "GovernorStarted",
     "GovernorStopped",
+    "CandidateSubmitted",
+    "CandidateSubmissionFailed",
     "TelemetryManager",
 ]

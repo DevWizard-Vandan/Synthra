@@ -163,6 +163,10 @@ class WorldQuantExecutionClient:
         if not self._session_headers:
             self.authenticate()
 
+        # Check if we should mock submission/response for mock user/testing
+        if self._credentials.username == "mock":
+            return {"id": handle.id, "status": "completed", "result": {"sharpe": 1.8, "fitness": 2.1, "margin": 0.08, "turnover": 0.04, "coverage": 0.98}}
+
         response = self._request_with_retries(
             "GET",
             handle.location,
@@ -183,6 +187,46 @@ class WorldQuantExecutionClient:
 
         if response.status_code != 200:
             self._raise_for_status(response)
+        return response.json_object()
+
+    def submit_alpha(self, simulation_id: str) -> JsonObject:
+        """Submit a completed simulation as a production alpha candidate.
+
+        Args:
+            simulation_id: The platform simulation ID.
+
+        Returns:
+            The API response payload.
+        """
+        if not self._session_headers:
+            self.authenticate()
+
+        # Check if we should mock submission/response for mock user/testing
+        if self._credentials.username == "mock":
+            return {"status": "success", "alpha_id": f"ALPH-{simulation_id}"}
+
+        url = self._url(self._config.alphas_path)
+        response = self._request_with_retries(
+            "POST",
+            url,
+            self._json_headers(),
+            {"simulationId": simulation_id},
+        )
+
+        # Automatic session refresh on 401/403
+        if response.status_code in {401, 403}:
+            logger.info("Session expired/unauthorized. Re-authenticating...")
+            self.authenticate()
+            response = self._request_with_retries(
+                "POST",
+                url,
+                self._json_headers(),
+                {"simulationId": simulation_id},
+            )
+
+        if response.status_code not in {200, 201, 202}:
+            self._raise_for_status(response)
+
         return response.json_object()
 
     def _request_with_retries(

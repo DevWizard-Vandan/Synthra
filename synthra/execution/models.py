@@ -27,6 +27,7 @@ class WorldQuantExecutionConfig(BaseExecutionModel):
     api_base_url: str = Field(default="https://api.worldquantbrain.com", min_length=1)
     auth_path: str = Field(default="/authentication", min_length=1)
     simulations_path: str = Field(default="/simulations", min_length=1)
+    alphas_path: str = Field(default="/alphas", min_length=1)
     timeout_seconds: float = Field(default=30.0, gt=0.0)
     max_retries: int = Field(default=2, ge=0, le=10)
 

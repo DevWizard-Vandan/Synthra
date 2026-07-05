@@ -1,24 +1,43 @@
 """Scorer subsystem computing expected future value scores for expressions."""
 
-from typing import List
+from typing import List, Optional
 
-from synthra.core.domain import SimulationResult
+from synthra.core.domain import SimulationResult, SimulationRequest
 from synthra.learning.feedback import LearningRecord
 from synthra.learning.similarity import jaccard_similarity
+from synthra.memory import DatabaseManager
 
 
 class ExpressionScorer:
     """Computes expected future value for a strategy candidate."""
 
-    def __init__(self, history: List[LearningRecord]) -> None:
+    def __init__(
+        self,
+        history: Optional[List[LearningRecord]] = None,
+        db_manager: Optional[DatabaseManager] = None,
+    ) -> None:
         """Initialize with historical strategy learning logs."""
-        self.history = history
+        self.history = history or []
+        self.db_manager = db_manager
+
+    def _refresh_history_from_db(self) -> None:
+        """Query and populate self.history from SQLite dynamically."""
+        if not self.db_manager:
+            return
+        try:
+            from synthra.learning.repository import LearningRepository
+            repo = LearningRepository(self.db_manager)
+            self.history = repo.get_all_records()
+        except Exception:
+            pass
 
     def score_expression(self, expression: str, result: SimulationResult) -> float:
         """Calculate score combining performance, novelty, and similarity penalty.
 
         Expected Future Value = Performance + Novelty_Premium - Similarity_Penalty
         """
+        self._refresh_history_from_db()
+
         # 1. Base performance metrics
         performance = (
             result.sharpe * 1.5
@@ -59,3 +78,83 @@ class ExpressionScorer:
 
         score = performance + historical_premium + novelty_premium - similarity_penalty
         return score
+
+    def get_operator_score(self, operator: str) -> float:
+        """Calculate the average Sharpe for learning records containing this operator."""
+        self._refresh_history_from_db()
+        if not self.history:
+            return 0.0
+        matching = [
+            r.sharpe
+            for r in self.history
+            if any(op.lower() == operator.lower() for op in r.operators)
+        ]
+        return sum(matching) / len(matching) if matching else 0.0
+
+    def get_dataset_score(self, dataset: str) -> float:
+        """Calculate the average Sharpe for learning records containing this dataset."""
+        self._refresh_history_from_db()
+        if not self.history:
+            return 0.0
+        matching = [
+            r.sharpe
+            for r in self.history
+            if any(d.lower() == dataset.lower() for d in r.datasets)
+        ]
+        return sum(matching) / len(matching) if matching else 0.0
+
+    def get_mutation_score(self, mutation_type: str) -> float:
+        """Calculate the average Sharpe for mutated expressions of this mutation type."""
+        if not self.db_manager:
+            return 0.0
+        try:
+            with self.db_manager.connection() as conn:
+                row = conn.execute(
+                    """
+                    SELECT AVG(lr.sharpe)
+                    FROM expression_lineages el
+                    JOIN learning_records lr ON el.expression = lr.expression
+                    WHERE el.mutation_type = ?
+                    """,
+                    (mutation_type,),
+                ).fetchone()
+                if row and row[0] is not None:
+                    return float(row[0])
+        except Exception:
+            pass
+        return 0.0
+
+    def rank_mutations(
+        self,
+        requests: List[SimulationRequest],
+        dataset_name: str,
+        operators: List[str],
+    ) -> List[SimulationRequest]:
+        """Rank and sort mutation requests based on historical operator, dataset, and mutation type performance.
+
+        Returns requests sorted in descending order of score.
+        """
+        scored_requests = []
+        for req in requests:
+            mutation_type = "parameter_tuning"
+            if self.db_manager:
+                try:
+                    with self.db_manager.connection() as conn:
+                        row = conn.execute(
+                            "SELECT mutation_type FROM expression_lineages WHERE expression = ? LIMIT 1",
+                            (req.expression,),
+                        ).fetchone()
+                        if row and row[0]:
+                            mutation_type = row[0]
+                except Exception:
+                    pass
+
+            op_score = sum(self.get_operator_score(op) for op in operators) / len(operators) if operators else 0.0
+            ds_score = self.get_dataset_score(dataset_name)
+            mut_score = self.get_mutation_score(mutation_type)
+
+            total_score = op_score * 0.3 + ds_score * 0.3 + mut_score * 0.4
+            scored_requests.append((req, total_score))
+
+        scored_requests.sort(key=lambda x: x[1], reverse=True)
+        return [x[0] for x in scored_requests]

@@ -267,3 +267,28 @@ def test_client_retry_exponential_backoff(monkeypatch: pytest.MonkeyPatch) -> No
     # First retry backoff: 0.5 * 2^0 = 0.5s
     # Second retry backoff: 0.5 * 2^1 = 1.0s
     assert sleep_times == [0.5, 1.0]
+
+
+def test_submit_alpha_success() -> None:
+    """Submitting an alpha sends request to correct endpoint and returns response."""
+    transport = FakeTransport(
+        responses=[
+            HttpResponse(
+                status_code=201,
+                headers={"Set-Cookie": "session=abc"},
+                body=b"{}",
+            ),
+            HttpResponse(
+                status_code=201,
+                headers={},
+                body=b'{"status":"success","alpha_id":"ALPH-1"}',
+            ),
+        ]
+    )
+    client = make_client(transport)
+    res = client.submit_alpha("SIM-1")
+    assert res == {"status": "success", "alpha_id": "ALPH-1"}
+    assert len(transport.requests) == 2
+    assert transport.requests[0].url.endswith("/authentication")
+    assert transport.requests[1].url.endswith("/alphas")
+    assert transport.requests[1].json_body == {"simulationId": "SIM-1"}

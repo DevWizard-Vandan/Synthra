@@ -316,3 +316,111 @@ def test_target_alpha_count_stop_condition(
         assert progress.approved_candidates >= 1
     finally:
         gov.stop()
+
+
+def test_submission_worker_success_and_duplicates(
+    test_env: Tuple[DatabaseManager, Governor, MagicMock],
+) -> None:
+    """Verify that SubmissionWorker processes candidates, handles duplicates, and sends events."""
+    db_manager, gov, mock_sim_runner = test_env
+    from synthra.governor.events import CandidateSubmitted, CandidateRejected
+    from synthra.governor.submission import QueuedCandidate
+
+    captured_events: List[Any] = []
+    import threading
+
+    submitted_event = threading.Event()
+    rejected_event = threading.Event()
+
+    def listener(event: Any) -> None:
+        captured_events.append(event)
+        if isinstance(event, CandidateSubmitted):
+            submitted_event.set()
+        elif isinstance(event, CandidateRejected) and event.reason == "duplicate submission check":
+            rejected_event.set()
+
+    gov.event_bus.subscribe(listener)
+
+    # Pre-populate database with campaign, hypothesis, and experiment to satisfy foreign keys
+    import json
+    with db_manager.transaction() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO campaigns (
+                id, name, region, universe, budget_limit, budget_spent, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("CMP-0005", "Test Campaign", "US", "TOP2000", 100.0, 0.0, "active", "2026-07-05T00:00:00")
+        )
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO hypotheses (
+                id, campaign_id, rationale, target_variable, datasets, operators, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("HYP-0001", "CMP-0005", "rationale", "returns", "[]", "[]", "pending", "2026-07-05T00:00:00")
+        )
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO experiments (
+                id, campaign_id, hypothesis_id, expression, status, request, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("EXP-0001", "CMP-0005", "HYP-0001", "ts_mean(close, 20)", "completed", "{}", "2026-07-05T00:00:00")
+        )
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO simulation_logs (
+                trace_id, expression, raw_request, raw_response, status, started_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            ("TRC-1", "ts_mean(close, 20)", "{}", '{"id":"SIM-REAL-123"}', "completed", "2026-07-05T00:00:00")
+        )
+        # Pre-populate alpha_candidates table to allow matching
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO alpha_candidates (
+                id, experiment_id, hypothesis_id, campaign_id, expression, result, is_submitted
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("AST-0001", "EXP-0001", "HYP-0001", "CMP-0005", "ts_mean(close, 20)", "{}", 0)
+        )
+
+    cand1 = QueuedCandidate(
+        candidate_id="AST-0001",
+        campaign_id="CMP-0005",
+        hypothesis_id="HYP-0001",
+        expression="ts_mean(close, 20)",
+        metrics={"sharpe": 1.8},
+        generation=1,
+    )
+
+    # 1. Enqueue candidate
+    gov.start()
+    try:
+        gov.submission_queue.enqueue(cand1)
+        assert submitted_event.wait(timeout=5.0)
+
+        # Verify marked as submitted in DB
+        with db_manager.connection() as conn:
+            row = conn.execute("SELECT is_submitted FROM alpha_candidates WHERE id = 'AST-0001'").fetchone()
+            assert row[0] == 1
+
+        # 2. Test Duplicate Check: enqueue the same candidate/expression again
+        cand2 = QueuedCandidate(
+            candidate_id="AST-0002",
+            campaign_id="CMP-0005",
+            hypothesis_id="HYP-0001",
+            expression="ts_mean(close, 20)",
+            metrics={"sharpe": 1.8},
+            generation=1,
+        )
+        gov.submission_queue.enqueue(cand2)
+        assert rejected_event.wait(timeout=5.0)
+
+        # Check events
+        assert any(isinstance(e, CandidateSubmitted) for e in captured_events)
+        assert any(isinstance(e, CandidateRejected) for e in captured_events)
+
+    finally:
+        gov.stop()

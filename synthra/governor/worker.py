@@ -728,6 +728,10 @@ class CampaignWorker(Thread):
                                     next_requests.append(mut_req)
 
                     generation += 1
+                    if self.orchestrator.scorer and next_requests:
+                        next_requests = self.orchestrator.scorer.rank_mutations(
+                            next_requests, dataset_name, hyp.operators
+                        )
                     current_requests = next_requests[
                         :5
                     ]  # Limit loop breadth per generation

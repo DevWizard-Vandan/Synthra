@@ -108,7 +108,7 @@ class ServiceState:
         feedback_gen = FeedbackGenerator()
         learning_repo = LearningRepository(self._db_manager)
         history_track = HistoryTracker(self._db_manager)
-        scorer = ExpressionScorer(history=[])
+        scorer = ExpressionScorer(db_manager=self._db_manager)
         selection_eng = SelectionEngine()
 
         self._orchestrator = ResearchOrchestrator(
