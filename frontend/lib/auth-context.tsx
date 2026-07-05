@@ -59,17 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchStatus]);
 
-  useEffect(() => {
-    if (loading) return;
 
-    // Use hard navigation to avoid Next.js App Router static export RSC payload issues
-    // which can cause infinite soft/hard reload loops.
-    if (!authenticated && pathname !== "/login") {
-      router.replace("/login");
-    } else if (authenticated && pathname === "/login") {
-      router.replace("/");
-    }
-  }, [authenticated, pathname, loading]);
 
   const login = async (
     username: string,

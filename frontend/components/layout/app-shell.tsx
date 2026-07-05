@@ -3,13 +3,20 @@
 import { TopNav } from "./top-nav";
 import { Sidebar } from "./sidebar";
 import { motion } from "framer-motion";
-
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { LoginForm } from "../auth/login-form";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { authenticated } = useAuth();
+
   if (pathname === "/login") {
     return <>{children}</>;
+  }
+
+  if (!authenticated) {
+    return <LoginForm />;
   }
 
   return (
