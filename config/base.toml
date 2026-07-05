@@ -31,6 +31,15 @@ api_base = "https://api.openai.com/v1"
 [llm.providers.openai.secrets]
 api_key = "" # To be overridden via environment variables or local.toml
 
+[llm.providers.google]
+model = "gemini-1.5-pro"
+enabled = false
+timeout_seconds = 60
+max_tokens = 4096
+
+[llm.providers.google.secrets]
+api_key = "" # To be overridden via environment variables or local.toml
+
 [paths]
 data_dir = "data"
 output_dir = "output"
