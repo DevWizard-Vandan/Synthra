@@ -1,7 +1,7 @@
 """Provider Manager managing model configurations and provider selection."""
 
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from synthra.core.config import ConfigurationManager, LLMConfig
 from synthra.llm.base import LLMProvider
@@ -40,44 +40,70 @@ class ProviderManager:
 
     def _load_providers(self, llm_config: LLMConfig) -> None:
         """Instantiate enabled providers from configuration settings."""
+        import os
         for name, p_config in llm_config.providers.items():
-            if not p_config.enabled:
+            normalized_name = name.lower()
+
+            # Check project-specific prefix env key
+            env_key = f"SYNTHRA_LLM_PROVIDERS_{name.upper()}_SECRETS_API_KEY"
+            api_key = os.environ.get(env_key)
+
+            # If disabled in config, we ONLY load if the project-specific override is set
+            if not p_config.enabled and not api_key:
                 continue
 
-            api_key = ""
-            if p_config.secrets and p_config.secrets.api_key:
+            # Fallback to standard environment key
+            if not api_key:
+                if normalized_name == "openai":
+                    api_key = os.environ.get("OPENAI_API_KEY")
+                elif normalized_name == "anthropic":
+                    api_key = os.environ.get("ANTHROPIC_API_KEY")
+                elif normalized_name in ("google", "gemini"):
+                    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+                elif normalized_name == "nvidia":
+                    api_key = os.environ.get("NVIDIA_API_KEY")
+                elif normalized_name == "deepseek":
+                    api_key = os.environ.get("DEEPSEEK_API_KEY")
+                elif normalized_name == "openrouter":
+                    api_key = os.environ.get("OPENROUTER_API_KEY")
+
+            # Fallback to config file
+            if not api_key and p_config.secrets and p_config.secrets.api_key:
                 api_key = p_config.secrets.api_key.get_secret_value()
+
+            # If still no api key, skip
+            if not api_key:
+                continue
 
             try:
                 provider: Optional[LLMProvider] = None
-                normalized_name = name.lower()
 
-                if normalized_name == "openai":
+                if normalized_name in ("openai", "nvidia", "deepseek", "glm", "kimi"):
                     provider = OpenAIProvider(
-                        api_key=api_key,
+                        api_key=api_key or "",
                         model=p_config.model,
-                        api_base=p_config.api_base,
+                        api_base=p_config.api_base or "https://api.openai.com/v1",
                         timeout_seconds=p_config.timeout_seconds,
                     )
                 elif normalized_name == "anthropic":
                     provider = AnthropicProvider(
-                        api_key=api_key,
+                        api_key=api_key or "",
                         model=p_config.model,
                         api_base=p_config.api_base,
                         timeout_seconds=p_config.timeout_seconds,
                     )
                 elif normalized_name in ("google", "gemini"):
                     provider = GoogleProvider(
-                        api_key=api_key,
+                        api_key=api_key or "",
                         model=p_config.model,
                         api_base=p_config.api_base,
                         timeout_seconds=p_config.timeout_seconds,
                     )
                 elif normalized_name == "openrouter":
                     provider = OpenRouterProvider(
-                        api_key=api_key,
+                        api_key=api_key or "",
                         model=p_config.model,
-                        api_base=p_config.api_base,
+                        api_base=p_config.api_base or "https://openrouter.ai/api/v1",
                         timeout_seconds=p_config.timeout_seconds,
                     )
                 elif normalized_name == "ollama":
@@ -115,6 +141,40 @@ class ProviderManager:
         if not self._default_provider_name:
             raise RuntimeError("No active LLM providers configured.")
         return self._providers[self._default_provider_name]
+
+    def get_fallback_providers(self) -> List[LLMProvider]:
+        """Return all enabled providers sorted by model priority."""
+        if not self._providers:
+            return []
+
+        # Best-to-worst priority list
+        PRIORITY = [
+            "sonnet",
+            "claude-3-5",
+            "haiku",
+            "gpt-5",
+            "gpt-4",
+            "gemini-3.5",
+            "gemini-3.1",
+            "gemini-2.5",
+            "gemini-1.5",
+            "nemotron",
+            "glm",
+            "kimi",
+            "deepseek",
+        ]
+
+        active_list = list(self._providers.values())
+
+        def get_priority_index(prov: LLMProvider) -> int:
+            model_name = getattr(prov, "model", "").lower()
+            for idx, p_name in enumerate(PRIORITY):
+                if p_name in model_name:
+                    return idx
+            return 999  # Lowest priority if not matched
+
+        active_list.sort(key=get_priority_index)
+        return active_list
 
     def health_check(self) -> Dict[str, ProviderHealth]:
         """Perform parallel latency status checks on all active connections."""

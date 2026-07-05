@@ -40,6 +40,55 @@ max_tokens = 4096
 [llm.providers.google.secrets]
 api_key = "" # To be overridden via environment variables or local.toml
 
+[llm.providers.anthropic]
+model = "claude-3-5-sonnet-latest"
+enabled = false
+timeout_seconds = 60
+max_tokens = 4096
+
+[llm.providers.anthropic.secrets]
+api_key = ""
+
+[llm.providers.nvidia]
+model = "nvidia/nemotron-4-340b-instruct"
+enabled = false
+api_base = "https://integrate.api.nvidia.com/v1"
+timeout_seconds = 60
+max_tokens = 4096
+
+[llm.providers.nvidia.secrets]
+api_key = ""
+
+[llm.providers.deepseek]
+model = "deepseek-chat"
+enabled = false
+api_base = "https://api.deepseek.com/v1"
+timeout_seconds = 60
+max_tokens = 4096
+
+[llm.providers.deepseek.secrets]
+api_key = ""
+
+[llm.providers.glm]
+model = "glm-4"
+enabled = false
+api_base = "https://open.bigmodel.cn/api/paas/v4"
+timeout_seconds = 60
+max_tokens = 4096
+
+[llm.providers.glm.secrets]
+api_key = ""
+
+[llm.providers.kimi]
+model = "moonshot-v1-8k"
+enabled = false
+api_base = "https://api.moonshot.cn/v1"
+timeout_seconds = 60
+max_tokens = 4096
+
+[llm.providers.kimi.secrets]
+api_key = ""
+
 [paths]
 data_dir = "data"
 output_dir = "output"

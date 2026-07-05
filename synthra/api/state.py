@@ -69,7 +69,9 @@ class ServiceState:
 
             llm_manager = ProviderManager()
             prov = llm_manager.get_default_provider()
-            llm_bridge = StructuredLLMBridge(prov)
+            fallback_provs = llm_manager.get_fallback_providers()
+            fallback_provs = [p for p in fallback_provs if p is not prov]
+            llm_bridge = StructuredLLMBridge(prov, fallback_providers=fallback_provs)
         except Exception:
             from synthra.research.hypothesis import MockLLMProvider
 
