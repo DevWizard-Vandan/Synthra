@@ -3,22 +3,38 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { motion } from "framer-motion";
-import { Lock, User, Check, ExternalLink } from "lucide-react";
+import { Lock, User, Check, ExternalLink, Key } from "lucide-react";
 
 export function LoginForm() {
   const { login, state, verificationUrl } = useAuth();
+  const [activeTab, setActiveTab] = useState<"credentials" | "token">("credentials");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
   const [remember, setRemember] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCredentialsSignIn = async () => {
     if (!username.trim() || !password.trim()) return;
-
     setIsSubmitting(true);
     try {
       await login(username, password, remember);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleCredentialsSignIn();
+  };
+
+  const handleTokenSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await login("", "", false, token);
     } finally {
       setIsSubmitting(false);
     }
@@ -36,7 +52,7 @@ export function LoginForm() {
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-slate-800 bg-[#0a0e1a]/80 p-8 backdrop-blur-xl shadow-2xl"
       >
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center">
           <motion.div
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
@@ -53,7 +69,7 @@ export function LoginForm() {
         </div>
 
         {state === "Waiting for Biometric Verification" && verificationUrl ? (
-          <div className="flex flex-col items-center justify-center gap-4 text-center py-6">
+          <div className="flex flex-col items-center justify-center gap-4 text-center py-4">
             <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-500/10 opacity-75" />
               <ExternalLink className="h-6 w-6" />
@@ -62,101 +78,171 @@ export function LoginForm() {
               Biometric/MFA Verification Required
             </h2>
             <p className="text-sm text-slate-400">
-              Please complete verification in the opened browser tab to continue.
+              Complete verification in the opened browser tab, then click the button below.
             </p>
             <a
               href={verificationUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
+              className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition-all w-full text-center"
             >
               Open Verification Page <ExternalLink className="h-4 w-4" />
             </a>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2"
-              >
-                Username
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-                  <User className="h-4 w-4" />
-                </span>
-                <input
-                  id="username"
-                  type="text"
-                  required
-                  disabled={isSubmitting}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="name@worldquant.com"
-                  className="block w-full rounded-lg border border-slate-800 bg-[#0d1224] py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-                  <Lock className="h-4 w-4" />
-                </span>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  disabled={isSubmitting}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="block w-full rounded-lg border border-slate-800 bg-[#0d1224] py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  disabled={isSubmitting}
-                  onChange={() => setRemember(!remember)}
-                  className="sr-only"
-                />
-                <div
-                  className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
-                    remember
-                      ? "border-indigo-500 bg-indigo-500"
-                      : "border-slate-800 bg-[#0d1224]"
-                  }`}
-                >
-                  {remember && <Check className="h-3 w-3 text-white" />}
-                </div>
-                <span className="ml-2 text-xs text-slate-400">Remember Me</span>
-              </label>
-            </div>
 
             <button
-              type="submit"
+              onClick={handleCredentialsSignIn}
               disabled={isSubmitting}
-              className="flex w-full items-center justify-center rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transition-all cursor-pointer"
+              className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all w-full cursor-pointer disabled:opacity-50"
             >
-              {isSubmitting
-                ? "Connecting to WorldQuant..."
-                : state === "Authenticating"
-                ? "Authenticating..."
-                : "Sign In"}
+              {isSubmitting ? "Completing Sign In..." : "Complete Sign In"}
             </button>
-          </form>
+          </div>
+        ) : (
+          <>
+            {/* Tab selector */}
+            <div className="flex border-b border-slate-800 mb-6">
+              <button
+                onClick={() => setActiveTab("credentials")}
+                className={`flex-1 pb-2.5 text-sm font-semibold transition-colors cursor-pointer ${
+                  activeTab === "credentials"
+                    ? "border-b-2 border-indigo-500 text-white"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Credentials
+              </button>
+              <button
+                onClick={() => setActiveTab("token")}
+                className={`flex-1 pb-2.5 text-sm font-semibold transition-colors cursor-pointer ${
+                  activeTab === "token"
+                    ? "border-b-2 border-indigo-500 text-white"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Session Token
+              </button>
+            </div>
+
+            {activeTab === "credentials" ? (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label
+                    htmlFor="username"
+                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2"
+                  >
+                    Username
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                      <User className="h-4 w-4" />
+                    </span>
+                    <input
+                      id="username"
+                      type="text"
+                      required
+                      disabled={isSubmitting}
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="name@worldquant.com"
+                      className="block w-full rounded-lg border border-slate-800 bg-[#0d1224] py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                      <Lock className="h-4 w-4" />
+                    </span>
+                    <input
+                      id="password"
+                      type="password"
+                      required
+                      disabled={isSubmitting}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="block w-full rounded-lg border border-slate-800 bg-[#0d1224] py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      disabled={isSubmitting}
+                      onChange={() => setRemember(!remember)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                        remember
+                          ? "border-indigo-500 bg-indigo-500"
+                          : "border-slate-800 bg-[#0d1224]"
+                      }`}
+                    >
+                      {remember && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                    <span className="ml-2 text-xs text-slate-400">Remember Me</span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex w-full items-center justify-center rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {isSubmitting
+                    ? "Connecting to WorldQuant..."
+                    : state === "Authenticating"
+                    ? "Authenticating..."
+                    : "Sign In"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleTokenSubmit} className="space-y-6">
+                <div>
+                  <label
+                    htmlFor="token"
+                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2"
+                  >
+                    WorldQuant BRAIN Bearer Token
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      id="token"
+                      required
+                      disabled={isSubmitting}
+                      value={token}
+                      onChange={(e) => setToken(e.target.value)}
+                      placeholder="Paste Authorization Bearer Token here..."
+                      rows={4}
+                      className="block w-full rounded-lg border border-slate-800 bg-[#0d1224] py-2.5 px-3 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 transition-colors font-mono resize-none"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                    How to get token: Log in to brain.worldquant.com, open Developer Tools (F12) &rarr; Application tab &rarr; Local Storage &rarr; Copy the value of key <strong>"token"</strong>.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex w-full items-center justify-center rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {isSubmitting ? "Authenticating Token..." : "Sign In with Token"}
+                </button>
+              </form>
+            )}
+          </>
         )}
       </motion.div>
     </div>

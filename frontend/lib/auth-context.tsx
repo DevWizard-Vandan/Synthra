@@ -14,7 +14,8 @@ interface AuthContextType {
   login: (
     username: string,
     password: string,
-    remember: boolean
+    remember: boolean,
+    token?: string
   ) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -64,11 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (
     username: string,
     password: string,
-    remember: boolean
+    remember: boolean,
+    token?: string
   ) => {
     try {
       setState("Authenticating");
-      const res = await api.login({ username, password, remember });
+      const res = await api.login({ username, password, remember, token });
       if (res.status === "success") {
         toast.success("Successfully logged in");
         setAuthenticated(true);

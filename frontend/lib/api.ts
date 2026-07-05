@@ -138,9 +138,10 @@ export interface TelemetryEvent {
 }
 
 export interface LoginRequest {
-  username: string;
-  password: string;
+  username?: string;
+  password?: string;
   remember: boolean;
+  token?: string;
 }
 
 export interface LoginResponse {
