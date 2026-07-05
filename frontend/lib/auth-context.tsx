@@ -62,12 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
+    // Use hard navigation to avoid Next.js App Router static export RSC payload issues
+    // which can cause infinite soft/hard reload loops.
     if (!authenticated && pathname !== "/login") {
-      router.push("/login");
+      window.location.href = "/login";
     } else if (authenticated && pathname === "/login") {
-      router.push("/");
+      window.location.href = "/";
     }
-  }, [authenticated, pathname, loading, router]);
+  }, [authenticated, pathname, loading]);
 
   const login = async (
     username: string,
@@ -113,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState("Logged Out");
       setVerificationUrl(null);
       toast.success("Successfully logged out");
-      router.push("/login");
+      window.location.href = "/login";
     } catch {
       toast.error("Logout failed");
     }
